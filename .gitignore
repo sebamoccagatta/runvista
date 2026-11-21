@@ -30,3 +30,6 @@ Thumbs.db
 
 # Serena local configuration
 .serena/project.local.yml
+
+# Prisma Client generado
+/apps/api/src/generated/prisma/
