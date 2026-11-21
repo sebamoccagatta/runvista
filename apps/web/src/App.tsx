@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Badge, Button, Card, StatusIndicator } from '@runvista/ui';
 
 type HealthResponse = {
   status: 'ok';
@@ -6,14 +7,14 @@ type HealthResponse = {
 };
 
 type ConnectionState =
-  | { status: 'loading' }
-  | { status: 'connected'; data: HealthResponse }
-  | { status: 'error'; message: string };
+  { status: 'connecting' } | { status: 'online'; service: string } | { status: 'offline' };
 
-export default function App() {
+function App() {
   const [connection, setConnection] = useState<ConnectionState>({
-    status: 'loading',
+    status: 'connecting',
   });
+
+  const [counter, setCounter] = useState(0);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -25,7 +26,7 @@ export default function App() {
         });
 
         if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
+          throw new Error('API unavailable');
         }
 
         const data: HealthResponse = await response.json();
@@ -36,16 +37,13 @@ export default function App() {
 
         if (!controller.signal.aborted) {
           setConnection({
-            status: 'connected',
-            data,
+            status: 'online',
+            service: data.service,
           });
         }
-      } catch (error) {
+      } catch {
         if (!controller.signal.aborted) {
-          setConnection({
-            status: 'error',
-            message: error instanceof Error ? error.message : 'Unknown connection error',
-          });
+          setConnection({ status: 'offline' });
         }
       }
     }
@@ -55,24 +53,125 @@ export default function App() {
     return () => controller.abort();
   }, []);
 
+  const connectionLabel =
+    connection.status === 'online'
+      ? `Connected to ${connection.service}`
+      : connection.status === 'connecting'
+        ? 'Connecting to API...'
+        : 'API unavailable';
+
   return (
-    <main>
-      <h1>Runvista</h1>
-      <p>Pokémon streaming platform</p>
+    <main className="min-h-screen bg-canvas px-5 py-12 text-text-primary">
+      <div className="mx-auto max-w-5xl">
+        <header className="mb-10 flex flex-col gap-5 border-b border-white/10 pb-8 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <Badge tone="brand">Design System v0.1</Badge>
 
-      <section aria-label="API status">
-        <h2>Estado del backend</h2>
+            <h1 className="mt-4 text-5xl font-black tracking-tight">
+              Run<span className="text-brand">vista</span>
+            </h1>
 
-        {connection.status === 'loading' && <p>Comprobando conexión...</p>}
+            <p className="mt-3 text-text-secondary">Your Pokémon adventure, live.</p>
+          </div>
 
-        {connection.status === 'connected' && (
-          <p role="status">Conectado: {connection.data.service}</p>
-        )}
+          <StatusIndicator status={connection.status} label={connectionLabel} />
+        </header>
 
-        {connection.status === 'error' && (
-          <p role="alert">Error de conexión: {connection.message}</p>
-        )}
-      </section>
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Card>
+            <div className="mb-6">
+              <p className="text-xs font-semibold tracking-widest text-accent uppercase">
+                Components / 01
+              </p>
+
+              <h2 className="mt-2 text-2xl font-bold">Buttons</h2>
+
+              <p className="mt-2 text-sm text-text-secondary">
+                Interactive controls for your adventure.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              <Button onClick={() => setCounter((value) => value + 1)}>Add point</Button>
+
+              <Button
+                variant="secondary"
+                onClick={() => setCounter((value) => Math.max(0, value - 1))}
+                disabled={counter === 0}
+              >
+                Remove point
+              </Button>
+
+              <Button variant="ghost" onClick={() => setCounter(0)}>
+                Reset
+              </Button>
+            </div>
+
+            <div className="mt-6 rounded-xl bg-surface-raised p-4">
+              <p className="text-xs text-text-secondary uppercase">Demo counter</p>
+              <p className="mt-1 text-3xl font-black text-accent">{counter}</p>
+            </div>
+          </Card>
+
+          <Card>
+            <p className="text-xs font-semibold tracking-widest text-accent uppercase">
+              Components / 02
+            </p>
+
+            <h2 className="mt-2 text-2xl font-bold">Badges</h2>
+
+            <p className="mt-2 text-sm text-text-secondary">
+              Labels for runs, generations and statuses.
+            </p>
+
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Badge>Classic</Badge>
+              <Badge tone="brand">Nuzlocke</Badge>
+              <Badge tone="accent">Generation VI</Badge>
+              <Badge tone="success">Active</Badge>
+            </div>
+          </Card>
+
+          <Card elevated>
+            <p className="text-xs font-semibold tracking-widest text-accent uppercase">
+              Components / 03
+            </p>
+
+            <h2 className="mt-2 text-2xl font-bold">Surfaces</h2>
+
+            <p className="mt-2 text-sm leading-relaxed text-text-secondary">
+              Elevated cards will help distinguish important information, such as the active Pokémon
+              team, run progress and streaming controls.
+            </p>
+
+            <div className="mt-6 rounded-xl border border-dashed border-white/15 p-5 text-center text-sm text-text-secondary">
+              Pokémon team preview
+            </div>
+          </Card>
+
+          <Card>
+            <p className="text-xs font-semibold tracking-widest text-accent uppercase">
+              Components / 04
+            </p>
+
+            <h2 className="mt-2 text-2xl font-bold">Connection states</h2>
+
+            <div className="mt-6 flex flex-col gap-4">
+              <StatusIndicator status="online" label="Service connected" />
+
+              <StatusIndicator status="connecting" label="Connecting..." />
+
+              <StatusIndicator status="offline" label="Service disconnected" />
+            </div>
+          </Card>
+        </div>
+
+        <footer className="mt-10 border-t border-white/10 pt-6 text-center text-xs text-text-secondary">
+          Runvista · UI component preview
+        </footer>
+      </div>
     </main>
   );
 }
+
+export default App;
