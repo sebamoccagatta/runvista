@@ -1,5 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Badge, Button, Card, StatusIndicator } from '@runvista/ui';
+import {
+  Badge,
+  Button,
+  Card,
+  StatusIndicator,
+  PokemonTypeBadge,
+  POKEMON_TYPES,
+} from '@runvista/ui';
 
 type HealthResponse = {
   status: 'ok';
@@ -165,6 +172,26 @@ function App() {
             </div>
           </Card>
         </div>
+
+        <section className="mt-8">
+          <Card>
+            <p className="text-xs font-semibold tracking-widest text-accent uppercase">
+              Pokémon / Types
+            </p>
+
+            <h2 className="mt-2 text-2xl font-bold">Elemental types</h2>
+
+            <p className="mt-2 text-sm text-text-secondary">
+              All 18 Pokémon types, ready for team cards and overlays.
+            </p>
+
+            <div className="mt-6 flex flex-wrap gap-3">
+              {POKEMON_TYPES.map((type) => (
+                <PokemonTypeBadge key={type} type={type} size="md" />
+              ))}
+            </div>
+          </Card>
+        </section>
 
         <footer className="mt-10 border-t border-white/10 pt-6 text-center text-xs text-text-secondary">
           Runvista · UI component preview

@@ -9,3 +9,10 @@ export type { CardProps } from './components/Card';
 
 export { StatusIndicator } from './components/StatusIndicator';
 export type { StatusIndicatorProps } from './components/StatusIndicator';
+
+export { PokemonTypeBadge } from './components/PokemonTypeBadge';
+export type { PokemonTypeBadgeProps } from './components/PokemonTypeBadge';
+
+export { POKEMON_TYPES, POKEMON_TYPE_LABELS } from './pokemon/types';
+
+export type { PokemonType } from './pokemon/types';
