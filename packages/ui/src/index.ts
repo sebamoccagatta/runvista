@@ -16,3 +16,7 @@ export type { PokemonTypeBadgeProps } from './components/PokemonTypeBadge';
 export { POKEMON_TYPES, POKEMON_TYPE_LABELS } from './pokemon/types';
 
 export type { PokemonType } from './pokemon/types';
+
+export { PokemonCard } from './components/PokemonCard';
+
+export type { PokemonCardData, PokemonCardProps, PokemonCondition } from './components/PokemonCard';

@@ -8,6 +8,8 @@ import {
   POKEMON_TYPES,
 } from '@runvista/ui';
 
+import { PokemonCardShowcase } from './components/PokemonCardShowcase';
+
 type HealthResponse = {
   status: 'ok';
   service: string;
@@ -192,6 +194,8 @@ function App() {
             </div>
           </Card>
         </section>
+
+        <PokemonCardShowcase />
 
         <footer className="mt-10 border-t border-white/10 pt-6 text-center text-xs text-text-secondary">
           Runvista · UI component preview
