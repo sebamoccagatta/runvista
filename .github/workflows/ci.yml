@@ -43,3 +43,6 @@ jobs:
 
       - name: Run unit tests
         run: pnpm exec vitest run --passWithNoTests
+
+      - name: Build applications
+        run: pnpm build
