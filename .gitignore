@@ -27,3 +27,6 @@ Thumbs.db
 
 *.sqlite
 *.sqlite3
+
+# Serena local configuration
+.serena/project.local.yml
