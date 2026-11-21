@@ -1,16 +1,19 @@
-﻿{
+{
     "name": "runvista",
     "version": "0.0.0",
     "private": true,
     "description": "Pokemon streaming and overlay platform",
     "packageManager": "pnpm@10.34.9",
     "engines": {
-        "node": "\u003e=22.0.0 \u003c23"
+        "node": ">=22.0.0 <23"
     },
     "scripts": {
         "lint": "echo \"Lint not configured yet\"",
         "build": "echo \"Build not configured yet\"",
         "dev": "echo \"Applications not configured yet\"",
         "test": "echo \"Tests not configured yet\""
+    },
+    "devDependencies": {
+        "typescript": "~5.9.3"
     }
 }
