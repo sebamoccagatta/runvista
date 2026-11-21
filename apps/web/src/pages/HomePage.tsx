@@ -52,7 +52,7 @@ const features = [
 export function HomePage() {
   return (
     <main>
-      <section className="relative overflow-hidden px-5 py-20 sm:py-28">
+      <section className="relative overflow-hidden px-5 pt-24 pb-16 sm:py-28">
         <div
           aria-hidden="true"
           className="pointer-events-none absolute top-0 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-brand/10 blur-3xl"
@@ -112,7 +112,10 @@ export function HomePage() {
         </div>
       </section>
 
-      <section id="caracteristicas" className="border-t border-white/10 bg-surface/40 px-5 py-20">
+      <section
+        id="caracteristicas"
+        className="scroll-mt-20 border-t border-white/10 bg-surface/40 px-5 py-20"
+      >
         <div className="mx-auto max-w-6xl">
           <div className="mb-10">
             <Badge tone="brand">La plataforma</Badge>
