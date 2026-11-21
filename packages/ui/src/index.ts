@@ -20,3 +20,9 @@ export type { PokemonType } from './pokemon/types';
 export { PokemonCard } from './components/PokemonCard';
 
 export type { PokemonCardData, PokemonCardProps, PokemonCondition } from './components/PokemonCard';
+
+export { PartySlot } from './components/PartySlot';
+export type { PartySlotProps } from './components/PartySlot';
+
+export { PartyPreview } from './components/PartyPreview';
+export type { PartyPreviewProps } from './components/PartyPreview';

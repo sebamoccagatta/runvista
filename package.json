@@ -9,13 +9,14 @@
   },
   "scripts": {
     "lint": "eslint .",
-    "build": "pnpm -r --filter @runvista/web --filter @runvista/api run build",
+    "build": "pnpm typecheck && pnpm -r --filter @runvista/web --filter @runvista/api run build",
     "dev": "pnpm --parallel --filter @runvista/web --filter @runvista/api run dev",
     "test": "vitest run",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint:fix": "eslint . --fix",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "typecheck": "pnpm --filter @runvista/ui typecheck"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",

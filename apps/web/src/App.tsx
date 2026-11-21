@@ -10,6 +10,8 @@ import {
 
 import { PokemonCardShowcase } from './components/PokemonCardShowcase';
 
+import { PartyPreviewShowcase } from './components/PartyPreviewShowcase';
+
 type HealthResponse = {
   status: 'ok';
   service: string;
@@ -196,6 +198,8 @@ function App() {
         </section>
 
         <PokemonCardShowcase />
+
+        <PartyPreviewShowcase />
 
         <footer className="mt-10 border-t border-white/10 pt-6 text-center text-xs text-text-secondary">
           Runvista · UI component preview
