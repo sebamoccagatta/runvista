@@ -5,12 +5,12 @@
   "description": "Pokemon streaming and overlay platform",
   "packageManager": "pnpm@10.34.9",
   "engines": {
-    "node": "\u003e=22.0.0 \u003c23"
+    "node": ">=22.0.0 <23"
   },
   "scripts": {
     "lint": "eslint .",
-    "build": "echo \"Build not configured yet\"",
-    "dev": "echo \"Applications not configured yet\"",
+    "build": "pnpm -r --filter @runvista/web --filter @runvista/api run build",
+    "dev": "pnpm --parallel --filter @runvista/web --filter @runvista/api run dev",
     "test": "vitest run",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -20,6 +20,9 @@
   "devDependencies": {
     "@eslint/js": "^9.39.5",
     "eslint": "^9.39.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.8",
+    "globals": "^17.14.0",
     "prettier": "^3.10.1",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.73.0",
