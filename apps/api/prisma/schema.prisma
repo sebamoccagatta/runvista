@@ -22,6 +22,7 @@ enum ParticipantRole {
 }
 
 model User {
+  sessions Session[]
   id          String  @id @default(uuid()) @db.Uuid
   displayName String  @db.VarChar(100)
   twitchId    String? @unique @db.VarChar(100)
@@ -65,4 +66,18 @@ model RunParticipant {
 
   @@unique([runId, userId])
   @@index([userId])
+}
+
+model Session {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @db.Uuid
+  tokenHash String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
 }
