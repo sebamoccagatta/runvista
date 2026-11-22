@@ -1,11 +1,18 @@
 import Fastify from 'fastify';
 
 import { createAuthRoutes, type AuthRoutesOptions } from './modules/auth/auth.routes.js';
+
 import { createRunRoutes, type RunRoutesDependencies } from './modules/runs/run.routes.js';
+
+import {
+  createRunConfigurationRoutes,
+  type RunConfigurationRoutesDependencies,
+} from './modules/run-configuration/run-configuration.routes.js';
 
 export interface BuildAppOptions {
   auth?: AuthRoutesOptions;
   runs?: RunRoutesDependencies;
+  runConfiguration?: RunConfigurationRoutesDependencies;
   allowedOrigins?: readonly string[];
 }
 
@@ -20,8 +27,6 @@ export function buildApp(options: BuildAppOptions = {}) {
     logger: {
       level: 'info',
 
-      // No registrar query strings: el callback OAuth
-      // contiene un código de autorización sensible.
       serializers: {
         req(request) {
           return {
@@ -38,10 +43,10 @@ export function buildApp(options: BuildAppOptions = {}) {
     },
   });
 
-  // Protección CSRF para las operaciones de escritura
-  // de partidas. Se ejecuta antes de sus handlers.
+  // Protección CSRF para escrituras de partidas
+  // y configuraciones.
   app.addHook('onRequest', async (request, reply) => {
-    if (!options.runs) {
+    if (!options.runs && !options.runConfiguration) {
       return;
     }
 
@@ -73,6 +78,10 @@ export function buildApp(options: BuildAppOptions = {}) {
 
   if (options.runs) {
     app.register(createRunRoutes(options.runs));
+  }
+
+  if (options.runConfiguration) {
+    app.register(createRunConfigurationRoutes(options.runConfiguration));
   }
 
   return app;

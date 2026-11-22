@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router';
 import { Badge, Card } from '@runvista/ui';
 
 import { getRun, RunApiError } from '../runs/api/runs.api';
+import { RunConfigurationPanel } from '../runs/configuration/RunConfigurationPanel';
 
 import {
   RUN_STATUS_LABELS,
@@ -22,11 +23,6 @@ type DetailState =
   | { status: 'error' };
 
 const sections = [
-  {
-    title: 'Configuración',
-    description: 'Juego, generación, modalidad y reglas del desafío.',
-    symbol: '⚙',
-  },
   {
     title: 'Equipo Pokémon',
     description: 'Los integrantes de tu equipo y sus estadísticas.',
@@ -131,7 +127,6 @@ export function RunDetailsPage() {
     setRetryCount((current) => current + 1);
   }
 
-  // Un ID ausente no representa una partida válida.
   if (!id) {
     return (
       <main className="mx-auto w-full max-w-6xl px-5 py-12">
@@ -257,7 +252,9 @@ export function RunDetailsPage() {
               </p>
             </div>
 
-            <div className="grid gap-5 sm:grid-cols-2">
+            <div className="grid items-start gap-5 sm:grid-cols-2">
+              <RunConfigurationPanel key={detail.run.id} runId={detail.run.id} />
+
               {sections.map((section) => (
                 <Card key={section.title} className="flex min-h-44 flex-col gap-4">
                   <div className="flex items-start justify-between gap-4">

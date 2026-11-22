@@ -1,5 +1,7 @@
 import 'dotenv/config';
 
+import type { FastifyRequest } from 'fastify';
+
 import { buildApp } from './app.js';
 import { createPrismaClient } from './db/prisma.js';
 import { resolveServerSecurityConfig } from './server.config.js';
@@ -12,6 +14,7 @@ import { TwitchAuthService } from './modules/auth/twitch.auth-service.js';
 import { parseTwitchConfig } from './modules/auth/twitch.config.js';
 
 import { RunService } from './modules/runs/run.service.js';
+import { RunConfigurationService } from './modules/run-configuration/run-configuration.service.js';
 
 function extractSessionToken(cookieHeader: string | undefined): string | null {
   if (!cookieHeader) {
@@ -69,6 +72,15 @@ const sessions = new AuthSessionService(prisma);
 const loginService = new AuthLoginService(twitchAuth, authUsers, sessions);
 
 const runs = new RunService(prisma);
+const runConfiguration = new RunConfigurationService(prisma);
+
+async function resolveActorId(request: FastifyRequest): Promise<string | null> {
+  const token = extractSessionToken(request.headers.cookie);
+
+  const user = await sessions.resolveUser(token);
+
+  return user?.id ?? null;
+}
 
 const app = buildApp({
   allowedOrigins,
@@ -83,14 +95,12 @@ const app = buildApp({
 
   runs: {
     service: runs,
+    resolveActorId,
+  },
 
-    async resolveActorId(request) {
-      const token = extractSessionToken(request.headers.cookie);
-
-      const user = await sessions.resolveUser(token);
-
-      return user?.id ?? null;
-    },
+  runConfiguration: {
+    service: runConfiguration,
+    resolveActorId,
   },
 });
 

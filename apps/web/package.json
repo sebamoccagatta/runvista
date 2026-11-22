@@ -4,12 +4,13 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
+    "dev": "pnpm --filter @runvista/pokemon build && vite",
+    "build": "pnpm --filter @runvista/pokemon build && tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@runvista/pokemon": "workspace:*",
     "@runvista/ui": "workspace:*",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
