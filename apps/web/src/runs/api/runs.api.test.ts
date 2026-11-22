@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { createRun, deleteRun, isRun, listRuns, RunApiError, updateRun } from './runs.api';
+import { createRun, deleteRun, isRun, listRuns, RunApiError, updateRun, getRun } from './runs.api';
 
 const run = {
   id: '550e8400-e29b-41d4-a716-446655440000',
@@ -191,5 +191,46 @@ describe('Runs API', () => {
 
     expect(error.status).toBe(503);
     expect(error.name).toBe('RunApiError');
+  });
+
+  it('gets a run by its ID', async () => {
+    fetchMock.mockResolvedValue(jsonResponse(200, run));
+
+    const result = await getRun(run.id);
+
+    expect(result).toEqual(run);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      `/api/runs/${run.id}`,
+      expect.objectContaining({
+        method: 'GET',
+        credentials: 'include',
+        cache: 'no-store',
+      }),
+    );
+  });
+
+  it('rejects a missing run with HTTP 404', async () => {
+    fetchMock.mockResolvedValue(
+      jsonResponse(404, {
+        error: 'RUN_NOT_FOUND',
+      }),
+    );
+
+    await expect(getRun(run.id)).rejects.toMatchObject({
+      name: 'RunApiError',
+      status: 404,
+    });
+  });
+
+  it('rejects a malformed run detail response', async () => {
+    fetchMock.mockResolvedValue(
+      jsonResponse(200, {
+        ...run,
+        status: 'INVALID',
+      }),
+    );
+
+    await expect(getRun(run.id)).rejects.toThrow('Invalid run response');
   });
 });

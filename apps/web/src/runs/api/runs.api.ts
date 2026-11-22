@@ -69,6 +69,19 @@ export async function listRuns(signal?: AbortSignal): Promise<Run[]> {
   return data;
 }
 
+export async function getRun(id: string, signal?: AbortSignal): Promise<Run> {
+  const data = await request(`/api/runs/${encodeURIComponent(id)}`, {
+    method: 'GET',
+    signal,
+  });
+
+  if (!isRun(data)) {
+    throw new Error('Invalid run response');
+  }
+
+  return data;
+}
+
 export async function createRun(input: CreateRunInput): Promise<Run> {
   const data = await request('/api/runs', {
     method: 'POST',
