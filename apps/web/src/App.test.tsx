@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { MemoryRouter } from 'react-router';
+
 import App from './App';
 
 function renderRoute(path: string) {
@@ -24,7 +25,8 @@ describe('App routing', () => {
     const html = renderRoute('/app');
 
     expect(html).toContain('Mis partidas');
-    expect(html).toContain('Tu próxima aventura comienza acá');
+    expect(html).toContain('Cargando partidas');
+    expect(html).toContain('Organizá tus aventuras Pokémon');
   });
 
   it('renders the 404 page for unknown routes', () => {
