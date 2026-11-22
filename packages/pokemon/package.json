@@ -1,0 +1,24 @@
+{
+  "name": "@runvista/pokemon",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/games.js",
+  "types": "./dist/games.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/games.d.ts",
+      "import": "./dist/games.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.3"
+  }
+}

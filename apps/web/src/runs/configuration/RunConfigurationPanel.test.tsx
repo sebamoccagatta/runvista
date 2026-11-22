@@ -1,0 +1,268 @@
+/**
+ * @vitest-environment jsdom
+ */
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+
+import { RunApiError } from '../api/runs.api';
+
+import { getRunConfiguration, saveRunConfiguration } from './configuration.api';
+
+import { RunConfigurationPanel } from './RunConfigurationPanel';
+
+vi.mock('./configuration.api', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./configuration.api')>();
+
+  return {
+    ...actual,
+    getRunConfiguration: vi.fn(),
+    saveRunConfiguration: vi.fn(),
+  };
+});
+
+const runId = '550e8400-e29b-41d4-a716-446655440000';
+
+const configuration = {
+  runId,
+  gameId: 'y',
+  challengeType: 'RANDOMLOCKE' as const,
+  createdAt: '2026-11-22T12:00:00.000Z',
+  updatedAt: '2026-11-22T12:00:00.000Z',
+};
+
+function renderPanel() {
+  return render(<RunConfigurationPanel runId={runId} />);
+}
+
+beforeEach(() => {
+  vi.resetAllMocks();
+
+  vi.mocked(getRunConfiguration).mockResolvedValue(configuration);
+
+  vi.mocked(saveRunConfiguration).mockResolvedValue(configuration);
+});
+
+afterEach(() => {
+  cleanup();
+});
+
+describe('RunConfigurationPanel', () => {
+  it('shows loading while requesting configuration', () => {
+    renderPanel();
+
+    expect(screen.getByText('Cargando configuración...')).toBeDefined();
+  });
+
+  it('loads an existing configuration', async () => {
+    renderPanel();
+
+    const game = await screen.findByLabelText('Juego Pokémon');
+
+    expect(game).toHaveProperty('value', 'y');
+
+    expect(screen.getByLabelText('Tipo de desafío')).toHaveProperty('value', 'RANDOMLOCKE');
+
+    expect(screen.getByText('Generación 6')).toBeDefined();
+
+    expect(getRunConfiguration).toHaveBeenCalledWith(runId, expect.any(AbortSignal));
+  });
+
+  it('allows configuring a new run', async () => {
+    vi.mocked(getRunConfiguration).mockResolvedValue(null);
+
+    renderPanel();
+
+    const game = await screen.findByLabelText('Juego Pokémon');
+
+    expect(game).toHaveProperty('value', '');
+
+    expect(screen.getByLabelText('Tipo de desafío')).toHaveProperty('value', 'NORMAL');
+
+    expect(screen.getByText('Esta partida todavía no tiene configuración.')).toBeDefined();
+
+    expect(
+      screen.getByRole('button', {
+        name: 'Guardar configuración',
+      }),
+    ).toHaveProperty('disabled', true);
+  });
+
+  it('saves the selected game and challenge', async () => {
+    vi.mocked(getRunConfiguration).mockResolvedValue(null);
+
+    const updated = {
+      ...configuration,
+      gameId: 'emerald',
+      challengeType: 'NUZLOCKE' as const,
+    };
+
+    vi.mocked(saveRunConfiguration).mockResolvedValue(updated);
+
+    renderPanel();
+
+    const game = await screen.findByLabelText('Juego Pokémon');
+
+    fireEvent.change(game, {
+      target: { value: 'emerald' },
+    });
+
+    fireEvent.change(screen.getByLabelText('Tipo de desafío'), {
+      target: { value: 'NUZLOCKE' },
+    });
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'Guardar configuración',
+      }),
+    );
+
+    await waitFor(() => {
+      expect(saveRunConfiguration).toHaveBeenCalledWith(runId, {
+        gameId: 'emerald',
+        challengeType: 'NUZLOCKE',
+      });
+    });
+
+    expect(await screen.findByText('Configuración guardada correctamente.')).toBeDefined();
+  });
+
+  it('allows editing an existing configuration', async () => {
+    renderPanel();
+
+    const game = await screen.findByLabelText('Juego Pokémon');
+
+    fireEvent.change(game, {
+      target: { value: 'omega-ruby' },
+    });
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'Guardar configuración',
+      }),
+    );
+
+    await waitFor(() => {
+      expect(saveRunConfiguration).toHaveBeenCalledWith(runId, {
+        gameId: 'omega-ruby',
+        challengeType: 'RANDOMLOCKE',
+      });
+    });
+  });
+
+  it('shows an error for invalid configuration', async () => {
+    vi.mocked(saveRunConfiguration).mockRejectedValue(new RunApiError('Invalid', 400));
+
+    renderPanel();
+
+    await screen.findByLabelText('Juego Pokémon');
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'Guardar configuración',
+      }),
+    );
+
+    expect(await screen.findByRole('alert')).toHaveProperty(
+      'textContent',
+      'Revisá el juego y el tipo de desafío.',
+    );
+  });
+
+  it('shows login when the session expires', async () => {
+    vi.mocked(getRunConfiguration).mockRejectedValue(new RunApiError('Unauthorized', 401));
+
+    renderPanel();
+
+    expect(
+      await screen.findByText('Necesitás iniciar sesión para editar la configuración.'),
+    ).toBeDefined();
+
+    expect(
+      screen
+        .getByRole('link', {
+          name: 'Iniciar con Twitch',
+        })
+        .getAttribute('href'),
+    ).toBe('/api/auth/twitch/login');
+  });
+
+  it('shows login when saving returns HTTP 401', async () => {
+    vi.mocked(saveRunConfiguration).mockRejectedValue(new RunApiError('Unauthorized', 401));
+
+    renderPanel();
+
+    await screen.findByLabelText('Juego Pokémon');
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'Guardar configuración',
+      }),
+    );
+
+    expect(
+      await screen.findByText('Necesitás iniciar sesión para editar la configuración.'),
+    ).toBeDefined();
+  });
+
+  it('handles an unavailable run during save', async () => {
+    vi.mocked(saveRunConfiguration).mockRejectedValue(new RunApiError('Not found', 404));
+
+    renderPanel();
+
+    await screen.findByLabelText('Juego Pokémon');
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'Guardar configuración',
+      }),
+    );
+
+    expect(await screen.findByText('Esta partida ya no está disponible.')).toBeDefined();
+  });
+
+  it('preserves selected data after a failed save', async () => {
+    vi.mocked(saveRunConfiguration).mockRejectedValue(new Error('Network error'));
+
+    renderPanel();
+
+    const game = await screen.findByLabelText('Juego Pokémon');
+
+    fireEvent.change(game, {
+      target: { value: 'emerald' },
+    });
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'Guardar configuración',
+      }),
+    );
+
+    expect(
+      await screen.findByText('No pudimos guardar la configuración. Intentá nuevamente.'),
+    ).toBeDefined();
+
+    expect(screen.getByLabelText('Juego Pokémon')).toHaveProperty('value', 'emerald');
+  });
+
+  it('retries loading after a network failure', async () => {
+    vi.mocked(getRunConfiguration)
+      .mockRejectedValueOnce(new Error('Network error'))
+      .mockResolvedValueOnce(configuration);
+
+    renderPanel();
+
+    expect(await screen.findByText('No pudimos cargar la configuración.')).toBeDefined();
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'Reintentar',
+      }),
+    );
+
+    expect(await screen.findByLabelText('Juego Pokémon')).toHaveProperty('value', 'y');
+
+    expect(getRunConfiguration).toHaveBeenCalledTimes(2);
+  });
+});

@@ -19,6 +19,14 @@ vi.mock('../runs/api/runs.api', async (importOriginal) => {
   };
 });
 
+vi.mock('../runs/configuration/RunConfigurationPanel', () => ({
+  RunConfigurationPanel: () => (
+    <section>
+      <h3>Configuración</h3>
+    </section>
+  ),
+}));
+
 const run: Run = {
   id: '550e8400-e29b-41d4-a716-446655440000',
   ownerId: '650e8400-e29b-41d4-a716-446655440000',
@@ -91,7 +99,7 @@ describe('RunDetailsPage', () => {
       ).toBeDefined();
     }
 
-    expect(screen.getAllByText('Próximamente')).toHaveLength(4);
+    expect(screen.getAllByText('Próximamente')).toHaveLength(3);
   });
 
   it('shows the missing description fallback', async () => {
