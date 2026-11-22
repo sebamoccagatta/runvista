@@ -14,6 +14,7 @@
     "db:status": "prisma migrate status --config prisma7.config.ts"
   },
   "dependencies": {
+    "@fastify/cookie": "^11.1.5",
     "@prisma/adapter-pg": "^7.10.1",
     "@prisma/client": "^7.10.1",
     "dotenv": "^18.0.10",

@@ -1,5 +1,7 @@
 import { NavLink, Outlet } from 'react-router';
 
+import { AuthControls } from '../components/AuthControls';
+
 const navigation = [
   { to: '/', label: 'Inicio', end: true },
   { to: '/app', label: 'Mis partidas', end: false },
@@ -18,35 +20,39 @@ export function SiteLayout() {
             Run<span className="text-brand">vista</span>
           </NavLink>
 
-          <nav aria-label="Navegación principal">
-            <div className="flex flex-wrap items-center gap-2">
-              {navigation.map((item) => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  end={item.end}
-                  className={({ isActive }) =>
-                    [
-                      'rounded-xl px-4 py-2 text-sm font-semibold',
-                      'transition-colors focus-visible:outline-2',
-                      'focus-visible:outline-offset-2 focus-visible:outline-accent',
-                      isActive
-                        ? 'bg-brand/15 text-brand'
-                        : 'text-text-secondary hover:bg-white/5 hover:text-text-primary',
-                    ].join(' ')
-                  }
-                >
-                  {item.label}
-                </NavLink>
-              ))}
-            </div>
-          </nav>
+          <div className="flex flex-wrap items-center gap-4">
+            <nav aria-label="Navegación principal">
+              <div className="flex flex-wrap items-center gap-2">
+                {navigation.map((item) => (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    end={item.end}
+                    className={({ isActive }) =>
+                      [
+                        'rounded-xl px-4 py-2 text-sm font-semibold',
+                        'transition-colors focus-visible:outline-2',
+                        'focus-visible:outline-offset-2 focus-visible:outline-accent',
+                        isActive
+                          ? 'bg-brand/15 text-brand'
+                          : 'text-text-secondary hover:bg-white/5 hover:text-text-primary',
+                      ].join(' ')
+                    }
+                  >
+                    {item.label}
+                  </NavLink>
+                ))}
+              </div>
+            </nav>
+
+            <AuthControls />
+          </div>
         </div>
       </header>
 
-      <div className="flex-1">
+      <main className="flex-1">
         <Outlet />
-      </div>
+      </main>
 
       <footer className="border-t border-white/10">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-5 py-6 text-xs text-text-secondary">
