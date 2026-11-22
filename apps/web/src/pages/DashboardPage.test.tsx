@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @vitest-environment jsdom
  */
 
@@ -7,6 +7,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 
 import { createRun, deleteRun, listRuns, RunApiError, updateRun } from '../runs/api/runs.api';
 import type { Run } from '../runs/types';
+import { MemoryRouter } from 'react-router';
 import { DashboardPage } from './DashboardPage';
 
 vi.mock('../runs/api/runs.api', async (importOriginal) => {
@@ -31,6 +32,14 @@ const run: Run = {
   updatedAt: '2026-11-21T20:00:00.000Z',
 };
 
+function renderDashboard() {
+  return render(
+    <MemoryRouter initialEntries={['/app']}>
+      <DashboardPage />
+    </MemoryRouter>,
+  );
+}
+
 beforeEach(() => {
   vi.resetAllMocks();
   vi.mocked(listRuns).mockResolvedValue([run]);
@@ -42,7 +51,7 @@ afterEach(() => {
 
 describe('DashboardPage', () => {
   it('loads and displays the users runs', async () => {
-    render(<DashboardPage />);
+    renderDashboard();
 
     expect(
       screen.getByRole('status', {
@@ -60,7 +69,7 @@ describe('DashboardPage', () => {
   it('shows the empty state when there are no runs', async () => {
     vi.mocked(listRuns).mockResolvedValue([]);
 
-    render(<DashboardPage />);
+    renderDashboard();
 
     expect(await screen.findByText('Tu próxima aventura comienza acá')).toBeDefined();
 
@@ -74,7 +83,7 @@ describe('DashboardPage', () => {
   it('shows login when the session is missing', async () => {
     vi.mocked(listRuns).mockRejectedValue(new RunApiError('Unauthorized', 401));
 
-    render(<DashboardPage />);
+    renderDashboard();
 
     expect(await screen.findByText('Tus aventuras te esperan')).toBeDefined();
 
@@ -92,7 +101,7 @@ describe('DashboardPage', () => {
       .mockRejectedValueOnce(new Error('Network error'))
       .mockResolvedValueOnce([run]);
 
-    render(<DashboardPage />);
+    renderDashboard();
 
     expect(await screen.findByText('No pudimos cargar tus partidas')).toBeDefined();
 
@@ -117,7 +126,7 @@ describe('DashboardPage', () => {
 
     vi.mocked(createRun).mockResolvedValue(created);
 
-    render(<DashboardPage />);
+    renderDashboard();
 
     fireEvent.click(
       await screen.findByRole('button', {
@@ -154,7 +163,7 @@ describe('DashboardPage', () => {
 
     vi.mocked(updateRun).mockResolvedValue(updated);
 
-    render(<DashboardPage />);
+    renderDashboard();
 
     fireEvent.click(
       await screen.findByRole('button', {
@@ -194,7 +203,7 @@ describe('DashboardPage', () => {
   it('preserves form data when updating fails', async () => {
     vi.mocked(updateRun).mockRejectedValue(new RunApiError('Server error', 500));
 
-    render(<DashboardPage />);
+    renderDashboard();
 
     fireEvent.click(
       await screen.findByRole('button', {
@@ -224,7 +233,7 @@ describe('DashboardPage', () => {
   });
 
   it('does not delete a run when cancellation is selected', async () => {
-    render(<DashboardPage />);
+    renderDashboard();
 
     fireEvent.click(
       await screen.findByRole('button', {
@@ -246,7 +255,7 @@ describe('DashboardPage', () => {
   it('deletes a run only after API confirmation', async () => {
     vi.mocked(deleteRun).mockResolvedValue(undefined);
 
-    render(<DashboardPage />);
+    renderDashboard();
 
     fireEvent.click(
       await screen.findByRole('button', {
@@ -272,7 +281,7 @@ describe('DashboardPage', () => {
   it('preserves the run when deletion fails', async () => {
     vi.mocked(deleteRun).mockRejectedValue(new RunApiError('Server error', 500));
 
-    render(<DashboardPage />);
+    renderDashboard();
 
     fireEvent.click(
       await screen.findByRole('button', {

@@ -1,3 +1,5 @@
+import { Link } from 'react-router';
+
 import { Card } from '@runvista/ui';
 
 import { RUN_STATUS_LABELS, RUN_STATUS_STYLES, formatRunDate, type Run } from '../types';
@@ -38,7 +40,15 @@ export function RunCard({ run, disabled = false, onEdit, onDelete }: RunCardProp
       <div className="border-t border-white/10 pt-4">
         <p className="text-xs text-text-secondary">Creada el {formatRunDate(run.createdAt)}</p>
 
-        <div className="mt-4 flex gap-3">
+        <Link
+          to={`/app/runs/${encodeURIComponent(run.id)}`}
+          aria-label={`Abrir ${run.title}`}
+          className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-brand px-4 text-sm font-bold text-white transition-colors hover:bg-brand-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        >
+          Abrir partida
+        </Link>
+
+        <div className="mt-3 flex gap-3">
           <button
             type="button"
             disabled={disabled}
