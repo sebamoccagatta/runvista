@@ -1,3 +1,5 @@
+import { isPokemonVarietyForSpecies } from '@runvista/pokemon/varieties';
+
 import type { PrismaClient } from '../../generated/prisma/client.js';
 
 import {
@@ -13,6 +15,13 @@ export class TeamSlotOccupiedError extends Error {
   constructor() {
     super('The selected team slot is occupied');
     this.name = 'TeamSlotOccupiedError';
+  }
+}
+
+export class InvalidPokemonVarietyError extends Error {
+  constructor() {
+    super('Pokemon variety does not belong to the selected species');
+    this.name = 'InvalidPokemonVarietyError';
   }
 }
 
@@ -70,6 +79,9 @@ export class RunPokemonService {
           data: {
             runId,
             speciesId: data.speciesId,
+            ...(data.pokemonId != null && {
+              pokemonId: data.pokemonId,
+            }),
             nickname: data.nickname ?? null,
             level: data.level ?? null,
             isShiny: data.isShiny,
@@ -114,11 +126,28 @@ export class RunPokemonService {
             id: pokemonId,
             runId,
           },
-          select: { id: true },
+          select:
+            data.pokemonId != null
+              ? {
+                  id: true,
+                  speciesId: true,
+                }
+              : {
+                  id: true,
+                },
         });
 
         if (!existing) {
           return { found: false as const };
+        }
+
+        if (
+          data.pokemonId != null &&
+          'speciesId' in existing &&
+          typeof existing.speciesId === 'number' &&
+          !isPokemonVarietyForSpecies(existing.speciesId, data.pokemonId)
+        ) {
+          throw new InvalidPokemonVarietyError();
         }
 
         const pokemon = await tx.runPokemon.update({
@@ -126,6 +155,9 @@ export class RunPokemonService {
             id: pokemonId,
           },
           data: {
+            ...(data.pokemonId !== undefined && {
+              pokemonId: data.pokemonId,
+            }),
             ...(data.nickname !== undefined && {
               nickname: data.nickname,
             }),

@@ -1,4 +1,5 @@
 import { isPokemonSpeciesId } from '@runvista/pokemon/species';
+import { isPokemonVarietyForSpecies } from '@runvista/pokemon/varieties';
 
 import { RunApiError } from '../api/runs.api';
 
@@ -10,6 +11,7 @@ export interface RunPokemon {
   id: string;
   runId: string;
   speciesId: number;
+  pokemonId?: number | null;
   nickname: string | null;
   level: number | null;
   isShiny: boolean;
@@ -21,6 +23,7 @@ export interface RunPokemon {
 
 export interface CreatePokemonInput {
   speciesId: number;
+  pokemonId?: number | null;
   nickname?: string | null;
   level?: number | null;
   isShiny?: boolean;
@@ -29,6 +32,7 @@ export interface CreatePokemonInput {
 }
 
 export interface UpdatePokemonInput {
+  pokemonId?: number | null;
   nickname?: string | null;
   level?: number | null;
   isShiny?: boolean;
@@ -49,6 +53,16 @@ export function isRunPokemon(value: unknown): value is RunPokemon {
   }
 
   const data = value as Record<string, unknown>;
+
+  if (typeof data.speciesId !== 'number' || !isPokemonSpeciesId(data.speciesId)) {
+    return false;
+  }
+
+  const validVariety =
+    data.pokemonId === undefined ||
+    data.pokemonId === null ||
+    (typeof data.pokemonId === 'number' &&
+      isPokemonVarietyForSpecies(data.speciesId, data.pokemonId));
 
   const validNickname =
     data.nickname === null || (typeof data.nickname === 'string' && data.nickname.length <= 50);
@@ -71,8 +85,7 @@ export function isRunPokemon(value: unknown): value is RunPokemon {
   return (
     typeof data.id === 'string' &&
     typeof data.runId === 'string' &&
-    typeof data.speciesId === 'number' &&
-    isPokemonSpeciesId(data.speciesId) &&
+    validVariety &&
     validNickname &&
     validLevel &&
     typeof data.isShiny === 'boolean' &&

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import { getPokemonSpecies } from '@runvista/pokemon/species';
+import { getPokemonVariety } from '@runvista/pokemon/varieties';
 
 import { CreatePokemonForm } from './CreatePokemonForm';
 import { EditPokemonDialog } from './EditPokemonDialog';
@@ -19,12 +20,18 @@ interface RunPokemonPanelProps {
 
 const TEAM_SLOTS = [1, 2, 3, 4, 5, 6] as const;
 
-function getPokemonName(pokemon: RunPokemon): string {
+function getPokemonFormName(pokemon: RunPokemon): string {
+  const variety = pokemon.pokemonId != null ? getPokemonVariety(pokemon.pokemonId) : undefined;
+
   return (
-    pokemon.nickname ||
-    getPokemonSpecies(pokemon.speciesId)?.displayName ||
+    variety?.displayName ??
+    getPokemonSpecies(pokemon.speciesId)?.displayName ??
     `Pokémon #${pokemon.speciesId}`
   );
+}
+
+function getPokemonName(pokemon: RunPokemon): string {
+  return pokemon.nickname || getPokemonFormName(pokemon);
 }
 
 interface PokemonCardProps {
@@ -36,9 +43,8 @@ interface PokemonCardProps {
 }
 
 function PokemonCard({ pokemon, occupiedSlots, moving, onMove, onEdit }: PokemonCardProps) {
-  const species = getPokemonSpecies(pokemon.speciesId);
   const displayName = getPokemonName(pokemon);
-  const speciesName = species?.displayName ?? `Pokémon #${pokemon.speciesId}`;
+  const formName = getPokemonFormName(pokemon);
 
   const hasNickname = Boolean(pokemon.nickname?.trim());
   const isFainted = pokemon.status === 'FAINTED';
@@ -60,6 +66,7 @@ function PokemonCard({ pokemon, occupiedSlots, moving, onMove, onEdit }: Pokemon
       >
         <PokemonSprite
           speciesId={pokemon.speciesId}
+          pokemonId={pokemon.pokemonId ?? null}
           isShiny={pokemon.isShiny}
           size="md"
           loading="lazy"
@@ -108,7 +115,7 @@ function PokemonCard({ pokemon, occupiedSlots, moving, onMove, onEdit }: Pokemon
             </button>
           </div>
 
-          {hasNickname && <p className="truncate text-xs text-text-secondary">{speciesName}</p>}
+          {hasNickname && <p className="truncate text-xs text-text-secondary">{formName}</p>}
 
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-text-secondary">
             <span>#{String(pokemon.speciesId).padStart(4, '0')}</span>
@@ -196,13 +203,9 @@ function EmptyTeamSlot({ slot }: EmptyTeamSlotProps) {
 function RunPokemonPanelContent({ runId }: RunPokemonPanelProps) {
   const [pokemon, setPokemon] = useState<RunPokemon[]>([]);
   const [loading, setLoading] = useState(true);
-
   const [loadError, setLoadError] = useState<string | null>(null);
-
   const [actionError, setActionError] = useState<string | null>(null);
-
   const [movingId, setMovingId] = useState<string | null>(null);
-
   const [editingId, setEditingId] = useState<string | null>(null);
 
   useEffect(() => {

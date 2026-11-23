@@ -1,4 +1,5 @@
 import { isPokemonSpeciesId } from '@runvista/pokemon/species';
+import { isPokemonVarietyForSpecies } from '@runvista/pokemon/varieties';
 import { z } from 'zod';
 
 export const runPokemonStatusSchema = z.enum(['TEAM', 'BOX', 'FAINTED']);
@@ -6,6 +7,8 @@ export const runPokemonStatusSchema = z.enum(['TEAM', 'BOX', 'FAINTED']);
 export const pokemonSpeciesIdSchema = z.number().int().min(1).max(9999).refine(isPokemonSpeciesId, {
   error: 'Unsupported Pokemon species',
 });
+
+export const pokemonVarietyIdSchema = z.number().int().positive();
 
 export const pokemonNicknameSchema = z.string().trim().max(50).nullable();
 
@@ -40,16 +43,28 @@ function validatePosition(
 export const createRunPokemonSchema = z
   .strictObject({
     speciesId: pokemonSpeciesIdSchema,
+    pokemonId: pokemonVarietyIdSchema.nullable().optional(),
     nickname: pokemonNicknameSchema.optional(),
     level: pokemonLevelSchema.optional(),
     isShiny: z.boolean().default(false),
     status: runPokemonStatusSchema.default('BOX'),
     teamSlot: teamSlotSchema.optional(),
   })
-  .superRefine(validatePosition);
+  .superRefine((data, context) => {
+    validatePosition(data, context);
+
+    if (data.pokemonId != null && !isPokemonVarietyForSpecies(data.speciesId, data.pokemonId)) {
+      context.addIssue({
+        code: 'custom',
+        path: ['pokemonId'],
+        message: 'Pokemon variety does not belong to the selected species',
+      });
+    }
+  });
 
 export const updateRunPokemonSchema = z
   .strictObject({
+    pokemonId: pokemonVarietyIdSchema.nullable().optional(),
     nickname: pokemonNicknameSchema.optional(),
     level: pokemonLevelSchema.optional(),
     isShiny: z.boolean().optional(),
