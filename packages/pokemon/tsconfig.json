@@ -6,6 +6,6 @@
     "noEmit": false,
     "declaration": true
   },
-  "include": ["src/games.ts"],
+  "include": ["src/*.ts"],
   "exclude": ["src/**/*.test.ts"]
 }
