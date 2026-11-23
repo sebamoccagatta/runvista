@@ -9,10 +9,16 @@ import {
   type RunConfigurationRoutesDependencies,
 } from './modules/run-configuration/run-configuration.routes.js';
 
+import {
+  createRunPokemonRoutes,
+  type RunPokemonRoutesDependencies,
+} from './modules/run-pokemon/run-pokemon.routes.js';
+
 export interface BuildAppOptions {
   auth?: AuthRoutesOptions;
   runs?: RunRoutesDependencies;
   runConfiguration?: RunConfigurationRoutesDependencies;
+  runPokemon?: RunPokemonRoutesDependencies;
   allowedOrigins?: readonly string[];
 }
 
@@ -43,10 +49,10 @@ export function buildApp(options: BuildAppOptions = {}) {
     },
   });
 
-  // Protección CSRF para escrituras de partidas
-  // y configuraciones.
+  // Protección CSRF para todas las escrituras
+  // de partidas, configuraciones y Pokémon.
   app.addHook('onRequest', async (request, reply) => {
-    if (!options.runs && !options.runConfiguration) {
+    if (!options.runs && !options.runConfiguration && !options.runPokemon) {
       return;
     }
 
@@ -65,12 +71,10 @@ export function buildApp(options: BuildAppOptions = {}) {
     }
   });
 
-  app.get('/api/health', async () => {
-    return {
-      status: 'ok',
-      service: 'runvista-api',
-    };
-  });
+  app.get('/api/health', async () => ({
+    status: 'ok',
+    service: 'runvista-api',
+  }));
 
   if (options.auth) {
     app.register(createAuthRoutes(options.auth));
@@ -82,6 +86,10 @@ export function buildApp(options: BuildAppOptions = {}) {
 
   if (options.runConfiguration) {
     app.register(createRunConfigurationRoutes(options.runConfiguration));
+  }
+
+  if (options.runPokemon) {
+    app.register(createRunPokemonRoutes(options.runPokemon));
   }
 
   return app;

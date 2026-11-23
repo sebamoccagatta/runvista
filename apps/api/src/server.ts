@@ -15,6 +15,7 @@ import { parseTwitchConfig } from './modules/auth/twitch.config.js';
 
 import { RunService } from './modules/runs/run.service.js';
 import { RunConfigurationService } from './modules/run-configuration/run-configuration.service.js';
+import { RunPokemonService } from './modules/run-pokemon/run-pokemon.service.js';
 
 function extractSessionToken(cookieHeader: string | undefined): string | null {
   if (!cookieHeader) {
@@ -73,6 +74,7 @@ const loginService = new AuthLoginService(twitchAuth, authUsers, sessions);
 
 const runs = new RunService(prisma);
 const runConfiguration = new RunConfigurationService(prisma);
+const runPokemon = new RunPokemonService(prisma);
 
 async function resolveActorId(request: FastifyRequest): Promise<string | null> {
   const token = extractSessionToken(request.headers.cookie);
@@ -100,6 +102,11 @@ const app = buildApp({
 
   runConfiguration: {
     service: runConfiguration,
+    resolveActorId,
+  },
+
+  runPokemon: {
+    service: runPokemon,
     resolveActorId,
   },
 });

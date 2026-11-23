@@ -5,6 +5,7 @@ import { Badge, Card } from '@runvista/ui';
 
 import { getRun, RunApiError } from '../runs/api/runs.api';
 import { RunConfigurationPanel } from '../runs/configuration/RunConfigurationPanel';
+import { RunPokemonPanel } from '../runs/pokemon/RunPokemonPanel';
 
 import {
   RUN_STATUS_LABELS,
@@ -22,12 +23,7 @@ type DetailState =
   | { status: 'not-found' }
   | { status: 'error' };
 
-const sections = [
-  {
-    title: 'Equipo Pokémon',
-    description: 'Los integrantes de tu equipo y sus estadísticas.',
-    symbol: '◈',
-  },
+const plannedSections = [
   {
     title: 'Capturas',
     description: 'Registro de encuentros y Pokémon obtenidos.',
@@ -96,7 +92,10 @@ export function RunDetailsPage() {
     getRun(id, controller.signal)
       .then((run) => {
         if (!controller.signal.aborted) {
-          setDetail({ status: 'ready', run });
+          setDetail({
+            status: 'ready',
+            run,
+          });
         }
       })
       .catch((error: unknown) => {
@@ -209,7 +208,9 @@ export function RunDetailsPage() {
                 <Badge tone="accent">Partida Pokémon</Badge>
 
                 <span
-                  className={`rounded-full border px-3 py-1 text-xs font-semibold ${RUN_STATUS_STYLES[detail.run.status]}`}
+                  className={`rounded-full border px-3 py-1 text-xs font-semibold ${
+                    RUN_STATUS_STYLES[detail.run.status]
+                  }`}
                 >
                   {RUN_STATUS_LABELS[detail.run.status]}
                 </span>
@@ -255,7 +256,7 @@ export function RunDetailsPage() {
             <div className="grid items-start gap-5 sm:grid-cols-2">
               <RunConfigurationPanel key={detail.run.id} runId={detail.run.id} />
 
-              {sections.map((section) => (
+              {plannedSections.map((section) => (
                 <Card key={section.title} className="flex min-h-44 flex-col gap-4">
                   <div className="flex items-start justify-between gap-4">
                     <div
@@ -281,6 +282,10 @@ export function RunDetailsPage() {
               ))}
             </div>
           </section>
+
+          <div className="border-t border-white/10 pt-8">
+            <RunPokemonPanel runId={detail.run.id} />
+          </div>
         </div>
       )}
     </main>

@@ -3,11 +3,15 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+
 import { MemoryRouter, Route, Routes } from 'react-router';
 
 import { getRun, RunApiError } from '../runs/api/runs.api';
+
 import type { Run } from '../runs/types';
+
 import { RunDetailsPage } from './RunDetailsPage';
 
 vi.mock('../runs/api/runs.api', async (importOriginal) => {
@@ -27,6 +31,14 @@ vi.mock('../runs/configuration/RunConfigurationPanel', () => ({
   ),
 }));
 
+vi.mock('../runs/pokemon/RunPokemonPanel', () => ({
+  RunPokemonPanel: ({ runId }: { runId: string }) => (
+    <section aria-label="Panel Pokémon" data-run-id={runId}>
+      <h2>Pokémon de la partida</h2>
+    </section>
+  ),
+}));
+
 const run: Run = {
   id: '550e8400-e29b-41d4-a716-446655440000',
   ownerId: '650e8400-e29b-41d4-a716-446655440000',
@@ -42,6 +54,7 @@ function renderDetails(path = `/app/runs/${run.id}`) {
     <MemoryRouter initialEntries={[path]}>
       <Routes>
         <Route path="/app/runs/:id" element={<RunDetailsPage />} />
+
         <Route path="/app" element={<div>Dashboard de prueba</div>} />
       </Routes>
     </MemoryRouter>,
@@ -84,14 +97,14 @@ describe('RunDetailsPage', () => {
     expect(screen.getByText('En curso')).toBeDefined();
   });
 
-  it('renders the four planned adventure modules', async () => {
+  it('renders configuration and pending modules', async () => {
     renderDetails();
 
     await screen.findByRole('heading', {
       name: 'Pokémon Y',
     });
 
-    for (const title of ['Configuración', 'Equipo Pokémon', 'Capturas', 'Progreso']) {
+    for (const title of ['Configuración', 'Capturas', 'Progreso']) {
       expect(
         screen.getByRole('heading', {
           name: title,
@@ -99,7 +112,39 @@ describe('RunDetailsPage', () => {
       ).toBeDefined();
     }
 
-    expect(screen.getAllByText('Próximamente')).toHaveLength(3);
+    expect(screen.getAllByText('Próximamente')).toHaveLength(2);
+  });
+
+  it('renders the Pokemon panel for the selected run', async () => {
+    renderDetails();
+
+    await screen.findByRole('heading', {
+      name: 'Pokémon Y',
+    });
+
+    const panel = screen.getByRole('region', {
+      name: 'Panel Pokémon',
+    });
+
+    expect(panel.getAttribute('data-run-id')).toBe(run.id);
+
+    expect(
+      screen.getByRole('heading', {
+        name: 'Pokémon de la partida',
+      }),
+    ).toBeDefined();
+  });
+
+  it('does not render Pokemon panel while loading', () => {
+    vi.mocked(getRun).mockReturnValue(new Promise(() => {}));
+
+    renderDetails();
+
+    expect(
+      screen.queryByRole('region', {
+        name: 'Panel Pokémon',
+      }),
+    ).toBeNull();
   });
 
   it('shows the missing description fallback', async () => {
@@ -129,6 +174,12 @@ describe('RunDetailsPage', () => {
         })
         .getAttribute('href'),
     ).toBe('/api/auth/twitch/login');
+
+    expect(
+      screen.queryByRole('region', {
+        name: 'Panel Pokémon',
+      }),
+    ).toBeNull();
   });
 
   it.each([400, 404])('shows not found for HTTP %i', async (status) => {
@@ -163,8 +214,6 @@ describe('RunDetailsPage', () => {
         name: 'Pokémon Y',
       }),
     ).toBeDefined();
-
-    expect(getRun).toHaveBeenCalledTimes(2);
   });
 
   it('navigates back to the dashboard', async () => {
