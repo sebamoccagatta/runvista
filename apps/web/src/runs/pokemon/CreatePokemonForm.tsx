@@ -1,5 +1,7 @@
 import { useState, type FormEvent } from 'react';
 
+import { isPokemonVarietyForSpecies } from '@runvista/pokemon/varieties';
+
 import {
   createRunPokemon,
   getPokemonErrorMessage,
@@ -7,6 +9,7 @@ import {
   type RunPokemon,
 } from './pokemon.api';
 import { PokemonSpeciesSelect } from './PokemonSpeciesSelect';
+import { PokemonVarietySelect } from './PokemonVarietySelect';
 
 interface CreatePokemonFormProps {
   runId: string;
@@ -31,6 +34,7 @@ export function CreatePokemonForm({
   occupiedSlots = [],
 }: CreatePokemonFormProps) {
   const [speciesId, setSpeciesId] = useState<number | null>(null);
+  const [pokemonId, setPokemonId] = useState<number | null>(null);
   const [nickname, setNickname] = useState('');
   const [level, setLevel] = useState('');
   const [isShiny, setIsShiny] = useState(false);
@@ -49,15 +53,26 @@ export function CreatePokemonForm({
 
   const validSlot = status !== 'TEAM' || (teamSlot !== null && !occupiedSlots.includes(teamSlot));
 
-  const canSubmit = speciesId !== null && validLevel && validNickname && validSlot && !saving;
+  const validVariety =
+    pokemonId === null || (speciesId !== null && isPokemonVarietyForSpecies(speciesId, pokemonId));
+
+  const canSubmit =
+    speciesId !== null && validLevel && validNickname && validSlot && validVariety && !saving;
 
   function resetForm() {
     setSpeciesId(null);
+    setPokemonId(null);
     setNickname('');
     setLevel('');
     setIsShiny(false);
     setStatus('BOX');
     setTeamSlot(null);
+    setError(null);
+  }
+
+  function changeSpecies(nextSpeciesId: number | null) {
+    setSpeciesId(nextSpeciesId);
+    setPokemonId(null);
     setError(null);
   }
 
@@ -80,6 +95,7 @@ export function CreatePokemonForm({
     try {
       const pokemon = await createRunPokemon(runId, {
         speciesId,
+        ...(pokemonId !== null ? { pokemonId } : {}),
         nickname: nickname.trim() || null,
         level: parsedLevel,
         isShiny,
@@ -108,7 +124,17 @@ export function CreatePokemonForm({
       </div>
 
       <fieldset disabled={saving} className="space-y-5">
-        <PokemonSpeciesSelect value={speciesId} onChange={setSpeciesId} disabled={saving} />
+        <PokemonSpeciesSelect value={speciesId} onChange={changeSpecies} disabled={saving} />
+
+        <PokemonVarietySelect
+          speciesId={speciesId}
+          value={pokemonId}
+          onChange={(nextPokemonId) => {
+            setPokemonId(nextPokemonId);
+            setError(null);
+          }}
+          disabled={saving}
+        />
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
@@ -197,7 +223,6 @@ export function CreatePokemonForm({
             >
               {TEAM_SLOTS.map((slot) => {
                 const occupied = occupiedSlots.includes(slot);
-
                 const selected = teamSlot === slot;
 
                 return (

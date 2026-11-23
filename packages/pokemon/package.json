@@ -13,6 +13,10 @@
     "./species": {
       "types": "./dist/species.d.ts",
       "import": "./dist/species.js"
+    },
+    "./varieties": {
+      "types": "./dist/varieties.d.ts",
+      "import": "./dist/varieties.js"
     }
   },
   "files": [
@@ -21,7 +25,8 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "generate:species": "node scripts/generate-species.mjs"
+    "generate:species": "node scripts/generate-species.mjs",
+    "generate:varieties": "node scripts/generate-varieties.mjs"
   },
   "devDependencies": {
     "typescript": "~5.9.3"

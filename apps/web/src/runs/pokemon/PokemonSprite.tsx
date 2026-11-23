@@ -1,11 +1,13 @@
 import { useState } from 'react';
 
 import { getPokemonSpecies } from '@runvista/pokemon/species';
+import { getPokemonVariety, isPokemonVarietyForSpecies } from '@runvista/pokemon/varieties';
 
 import { getPokemonSpriteUrls } from './pokemon-sprites';
 
 interface PokemonSpriteProps {
   speciesId: number;
+  pokemonId?: number | null;
   isShiny?: boolean;
   size?: 'sm' | 'md' | 'lg';
   loading?: 'eager' | 'lazy';
@@ -20,23 +22,37 @@ const SIZE_CLASSES = {
 
 interface SpriteImageProps {
   speciesId: number;
+  pokemonId: number | null;
   isShiny: boolean;
   size: 'sm' | 'md' | 'lg';
   loading: 'eager' | 'lazy';
   className: string;
 }
 
-function SpriteImage({ speciesId, isShiny, size, loading, className }: SpriteImageProps) {
+function SpriteImage({
+  speciesId,
+  pokemonId,
+  isShiny,
+  size,
+  loading,
+  className,
+}: SpriteImageProps) {
   const [sourceIndex, setSourceIndex] = useState(0);
 
   const species = getPokemonSpecies(speciesId);
-  const sources = getPokemonSpriteUrls(speciesId, isShiny);
 
-  const source = sources[sourceIndex];
+  const variety =
+    pokemonId !== null && isPokemonVarietyForSpecies(speciesId, pokemonId)
+      ? getPokemonVariety(pokemonId)
+      : undefined;
 
-  const displayName = species?.displayName ?? `Pokémon #${speciesId}`;
+  const sources = getPokemonSpriteUrls(speciesId, isShiny, pokemonId);
+
+  const displayName = variety?.displayName ?? species?.displayName ?? `Pokémon #${speciesId}`;
 
   const imageLabel = isShiny ? `${displayName} shiny` : displayName;
+
+  const source = sources[sourceIndex];
 
   return (
     <div
@@ -64,9 +80,7 @@ function SpriteImage({ speciesId, isShiny, size, loading, className }: SpriteIma
             ?
           </span>
 
-          <span aria-hidden="true" className="text-[10px] font-semibold">
-            #{String(speciesId).padStart(4, '0')}
-          </span>
+          <span className="text-[10px] font-semibold">#{String(speciesId).padStart(4, '0')}</span>
         </div>
       )}
     </div>
@@ -75,6 +89,7 @@ function SpriteImage({ speciesId, isShiny, size, loading, className }: SpriteIma
 
 export function PokemonSprite({
   speciesId,
+  pokemonId = null,
   isShiny = false,
   size = 'md',
   loading = 'lazy',
@@ -82,8 +97,9 @@ export function PokemonSprite({
 }: PokemonSpriteProps) {
   return (
     <SpriteImage
-      key={`${speciesId}-${isShiny}`}
+      key={`${speciesId}-${pokemonId ?? 'default'}-${isShiny}`}
       speciesId={speciesId}
+      pokemonId={pokemonId}
       isShiny={isShiny}
       size={size}
       loading={loading}

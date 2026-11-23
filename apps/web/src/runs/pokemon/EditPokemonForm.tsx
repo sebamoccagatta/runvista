@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 
 import { getPokemonSpecies } from '@runvista/pokemon/species';
+import { isPokemonVarietyForSpecies } from '@runvista/pokemon/varieties';
 
 import {
   getPokemonErrorMessage,
@@ -8,6 +9,7 @@ import {
   type RunPokemon,
   type UpdatePokemonInput,
 } from './pokemon.api';
+import { PokemonVarietySelect } from './PokemonVarietySelect';
 
 interface EditPokemonFormProps {
   pokemon: RunPokemon;
@@ -28,6 +30,8 @@ export function EditPokemonForm({
 
   const [isShiny, setIsShiny] = useState(pokemon.isShiny);
 
+  const [pokemonId, setPokemonId] = useState<number | null>(pokemon.pokemonId ?? null);
+
   const [saving, setSaving] = useState(false);
 
   const [error, setError] = useState<string | null>(null);
@@ -46,15 +50,20 @@ export function EditPokemonForm({
     parsedLevel === null ||
     (Number.isInteger(parsedLevel) && parsedLevel >= 1 && parsedLevel <= 100);
 
+  const validVariety =
+    pokemonId === null || isPokemonVarietyForSpecies(pokemon.speciesId, pokemonId);
+
   const nicknameChanged = parsedNickname !== pokemon.nickname;
 
   const levelChanged = parsedLevel !== pokemon.level;
 
   const shinyChanged = isShiny !== pokemon.isShiny;
 
-  const hasChanges = nicknameChanged || levelChanged || shinyChanged;
+  const varietyChanged = pokemonId !== (pokemon.pokemonId ?? null);
 
-  const canSubmit = validNickname && validLevel && hasChanges && !saving;
+  const hasChanges = nicknameChanged || levelChanged || shinyChanged || varietyChanged;
+
+  const canSubmit = validNickname && validLevel && validVariety && hasChanges && !saving;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -67,6 +76,7 @@ export function EditPokemonForm({
       ...(nicknameChanged ? { nickname: parsedNickname } : {}),
       ...(levelChanged ? { level: parsedLevel } : {}),
       ...(shinyChanged ? { isShiny } : {}),
+      ...(varietyChanged ? { pokemonId } : {}),
     };
 
     setSaving(true);
@@ -102,6 +112,16 @@ export function EditPokemonForm({
       )}
 
       <fieldset disabled={saving} className="space-y-4">
+        <PokemonVarietySelect
+          speciesId={pokemon.speciesId}
+          value={pokemonId}
+          onChange={(nextPokemonId) => {
+            setPokemonId(nextPokemonId);
+            setError(null);
+          }}
+          disabled={saving}
+        />
+
         <div className="space-y-2">
           <label htmlFor={`edit-nickname-${pokemon.id}`} className="block text-xs font-semibold">
             Apodo

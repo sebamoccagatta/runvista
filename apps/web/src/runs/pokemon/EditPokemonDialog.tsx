@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef } from 'react';
 
 import { getPokemonSpecies } from '@runvista/pokemon/species';
+import { getPokemonVariety } from '@runvista/pokemon/varieties';
 
 import { EditPokemonForm } from './EditPokemonForm';
 import { PokemonSprite } from './PokemonSprite';
@@ -18,7 +19,9 @@ export function EditPokemonDialog({ pokemon, onUpdated, onClose }: EditPokemonDi
 
   const species = getPokemonSpecies(pokemon.speciesId);
 
-  const speciesName = species?.displayName ?? `Pokémon #${pokemon.speciesId}`;
+  const variety = pokemon.pokemonId != null ? getPokemonVariety(pokemon.pokemonId) : undefined;
+
+  const formName = variety?.displayName ?? species?.displayName ?? `Pokémon #${pokemon.speciesId}`;
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -78,16 +81,17 @@ export function EditPokemonDialog({ pokemon, onUpdated, onClose }: EditPokemonDi
         <div className="flex items-center gap-4 rounded-xl border border-white/10 bg-surface-raised p-3">
           <PokemonSprite
             speciesId={pokemon.speciesId}
+            pokemonId={pokemon.pokemonId ?? null}
             isShiny={pokemon.isShiny}
             size="sm"
             loading="eager"
           />
 
           <div className="min-w-0 flex-1 space-y-1">
-            <p className="truncate font-bold">{pokemon.nickname || speciesName}</p>
+            <p className="truncate font-bold">{pokemon.nickname || formName}</p>
 
             <p className="text-sm text-text-secondary">
-              {speciesName} · #{String(pokemon.speciesId).padStart(4, '0')}
+              {formName} · #{String(pokemon.speciesId).padStart(4, '0')}
             </p>
 
             {pokemon.level !== null && (

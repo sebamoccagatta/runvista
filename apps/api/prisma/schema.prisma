@@ -86,6 +86,7 @@ model RunPokemon {
   run   Run    @relation(fields: [runId], references: [id], onDelete: Cascade)
 
   speciesId Int
+  pokemonId Int?
   nickname  String? @db.VarChar(50)
   level     Int?
   isShiny   Boolean @default(false)
