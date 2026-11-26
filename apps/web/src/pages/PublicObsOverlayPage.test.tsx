@@ -258,6 +258,59 @@ describe('PublicObsOverlayPage', () => {
     expect(fetchMock).toHaveBeenCalledTimes(requests);
   });
 
+  it('draws the Poke Ball behind the Pokemon sprite', async () => {
+    fetchMock.mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          layout: createDefaultOverlayLayout(),
+          pokemon: [
+            {
+              speciesId: 25,
+              pokemonId: null,
+              nickname: 'Pikachu',
+              level: 20,
+              isShiny: false,
+              pokeBall: 'ultra-ball',
+              teamSlot: 1,
+            },
+          ],
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } },
+      ),
+    );
+
+    await mount();
+
+    expect(screen.getByText('Pikachu')).toBeTruthy();
+  });
+
+  it('rejects a snapshot with an unknown Poke Ball key', async () => {
+    fetchMock.mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          layout: createDefaultOverlayLayout(),
+          pokemon: [
+            {
+              speciesId: 25,
+              pokemonId: null,
+              nickname: 'Pikachu',
+              level: 20,
+              isShiny: false,
+              pokeBall: 'pokeball-falsa',
+              teamSlot: 1,
+            },
+          ],
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } },
+      ),
+    );
+
+    await mount();
+
+    expect(screen.queryByText('Pikachu')).toBeNull();
+    expect(document.querySelector('img[src*="pokeball-falsa"]')).toBeNull();
+  });
+
   it('cancels a pending refresh retry on unmount', async () => {
     const view = await mount();
     fetchMock.mockResolvedValueOnce(new Response(null, { status: 500 }));

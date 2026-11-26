@@ -3,6 +3,8 @@ import { useState } from 'react';
 import { getPokemonSpecies } from '@runvista/pokemon/species';
 import { getPokemonVariety } from '@runvista/pokemon/varieties';
 
+import { getPokeBall } from '@runvista/pokemon/pokeballs';
+
 import { getPokemonSpriteUrls } from '../pokemon/pokemon-sprites';
 
 import type { OverlayLayout } from './overlay.api';
@@ -13,6 +15,8 @@ export interface OverlayTeamPokemon {
   nickname: string | null;
   level: number | null;
   isShiny: boolean;
+  // Clave de la Poké Ball. Snapshots anteriores pueden no incluirla.
+  pokeBall?: string | null;
   teamSlot: number | null;
   status?: 'TEAM' | 'BOX' | 'FAINTED';
   id?: string;
@@ -105,11 +109,25 @@ export function OverlayRenderer({ layout, pokemon }: OverlayRendererProps) {
               height: element.height,
             }}
           >
-            <div className="min-h-0 w-full flex-1">
-              <OverlayPokemonImage
-                key={`${member.id ?? element.slot}-${member.pokemonId ?? 'default'}-${member.isShiny}`}
-                pokemon={member}
-              />
+            <div className="relative min-h-0 w-full flex-1">
+              {member.pokeBall && getPokeBall(member.pokeBall) && (
+                // La ball va detrás del sprite: está antes en el DOM y el sprite
+                // tiene `relative`, así que se pinta encima.
+                <img
+                  src={getPokeBall(member.pokeBall)?.imageUrl}
+                  alt=""
+                  aria-hidden="true"
+                  draggable={false}
+                  className="absolute left-1/2 top-1/2 h-[70%] w-[70%] -translate-x-1/2 -translate-y-1/2 object-contain opacity-40"
+                />
+              )}
+
+              <div className="relative h-full w-full">
+                <OverlayPokemonImage
+                  key={`${member.id ?? element.slot}-${member.pokemonId ?? 'default'}-${member.isShiny}`}
+                  pokemon={member}
+                />
+              </div>
             </div>
 
             {hasText && (
