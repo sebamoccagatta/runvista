@@ -17,6 +17,10 @@
     "./varieties": {
       "types": "./dist/varieties.d.ts",
       "import": "./dist/varieties.js"
+    },
+    "./pokeballs": {
+      "types": "./dist/pokeballs.d.ts",
+      "import": "./dist/pokeballs.js"
     }
   },
   "files": [
