@@ -1,5 +1,7 @@
 import { useState, type FormEvent } from 'react';
 
+import { PokeBallSelect } from './PokeBallSelect';
+
 import { getPokemonSpecies } from '@runvista/pokemon/species';
 import { isPokemonVarietyForSpecies } from '@runvista/pokemon/varieties';
 
@@ -30,6 +32,8 @@ export function EditPokemonForm({
 
   const [isShiny, setIsShiny] = useState(pokemon.isShiny);
 
+  const [pokeBall, setPokeBall] = useState<string | null>(pokemon.pokeBall ?? null);
+
   const [pokemonId, setPokemonId] = useState<number | null>(pokemon.pokemonId ?? null);
 
   const [saving, setSaving] = useState(false);
@@ -59,9 +63,12 @@ export function EditPokemonForm({
 
   const shinyChanged = isShiny !== pokemon.isShiny;
 
+  const pokeBallChanged = pokeBall !== (pokemon.pokeBall ?? null);
+
   const varietyChanged = pokemonId !== (pokemon.pokemonId ?? null);
 
-  const hasChanges = nicknameChanged || levelChanged || shinyChanged || varietyChanged;
+  const hasChanges =
+    nicknameChanged || levelChanged || shinyChanged || varietyChanged || pokeBallChanged;
 
   const canSubmit = validNickname && validLevel && validVariety && hasChanges && !saving;
 
@@ -76,6 +83,7 @@ export function EditPokemonForm({
       ...(nicknameChanged ? { nickname: parsedNickname } : {}),
       ...(levelChanged ? { level: parsedLevel } : {}),
       ...(shinyChanged ? { isShiny } : {}),
+      ...(pokeBallChanged ? { pokeBall } : {}),
       ...(varietyChanged ? { pokemonId } : {}),
     };
 
@@ -162,6 +170,13 @@ export function EditPokemonForm({
             </p>
           )}
         </div>
+
+        <PokeBallSelect
+          id={`edit-poke-ball-${pokemon.id}`}
+          value={pokeBall}
+          onChange={setPokeBall}
+          disabled={saving}
+        />
 
         <label className="flex items-center gap-3 rounded-lg border border-white/10 bg-surface-raised px-3 py-3">
           <input

@@ -111,6 +111,7 @@ describe('CreatePokemonForm', () => {
       nickname: null,
       level: null,
       isShiny: false,
+      pokeBall: null,
       status: 'BOX',
     });
   });

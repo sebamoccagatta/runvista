@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 
+import { getPokeBall } from '@runvista/pokemon/pokeballs';
 import { getPokemonSpecies } from '@runvista/pokemon/species';
 import { getPokemonVariety } from '@runvista/pokemon/varieties';
 
@@ -78,6 +79,16 @@ function PokemonCard({ pokemon, occupiedSlots, moving, onMove, onEdit }: Pokemon
               : 'transition-transform duration-200 group-hover:scale-105'
           }
         />
+
+        {pokemon.pokeBall && getPokeBall(pokemon.pokeBall) && (
+          <img
+            src={getPokeBall(pokemon.pokeBall)?.imageUrl}
+            alt={`Poké Ball: ${getPokeBall(pokemon.pokeBall)?.name}`}
+            title={getPokeBall(pokemon.pokeBall)?.name}
+            loading="lazy"
+            className="absolute bottom-2 left-2 h-6 w-6 object-contain"
+          />
+        )}
 
         {pokemon.isShiny && (
           <span

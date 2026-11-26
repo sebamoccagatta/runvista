@@ -1,3 +1,4 @@
+import { isPokeBallKey } from '@runvista/pokemon/pokeballs';
 import { isPokemonSpeciesId } from '@runvista/pokemon/species';
 import { isPokemonVarietyForSpecies } from '@runvista/pokemon/varieties';
 
@@ -15,6 +16,8 @@ export interface RunPokemon {
   nickname: string | null;
   level: number | null;
   isShiny: boolean;
+  // Clave de la Poké Ball. Respuestas antiguas pueden no incluirla.
+  pokeBall?: string | null;
   status: PokemonStatus;
   teamSlot: number | null;
   createdAt: string;
@@ -27,6 +30,7 @@ export interface CreatePokemonInput {
   nickname?: string | null;
   level?: number | null;
   isShiny?: boolean;
+  pokeBall?: string | null;
   status?: PokemonStatus;
   teamSlot?: number | null;
 }
@@ -36,6 +40,7 @@ export interface UpdatePokemonInput {
   nickname?: string | null;
   level?: number | null;
   isShiny?: boolean;
+  pokeBall?: string | null;
 }
 
 export interface MovePokemonInput {
@@ -89,6 +94,8 @@ export function isRunPokemon(value: unknown): value is RunPokemon {
     validNickname &&
     validLevel &&
     typeof data.isShiny === 'boolean' &&
+    (data.pokeBall == null ||
+      (typeof data.pokeBall === 'string' && isPokeBallKey(data.pokeBall))) &&
     isPokemonStatus(data.status) &&
     validPosition &&
     typeof data.createdAt === 'string' &&
