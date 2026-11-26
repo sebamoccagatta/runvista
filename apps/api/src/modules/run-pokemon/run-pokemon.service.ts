@@ -85,6 +85,7 @@ export class RunPokemonService {
             nickname: data.nickname ?? null,
             level: data.level ?? null,
             isShiny: data.isShiny,
+            pokeBall: data.pokeBall ?? null,
             status: data.status,
             teamSlot: data.status === 'TEAM' ? data.teamSlot! : null,
           },
@@ -166,6 +167,9 @@ export class RunPokemonService {
             }),
             ...(data.isShiny !== undefined && {
               isShiny: data.isShiny,
+            }),
+            ...(data.pokeBall !== undefined && {
+              pokeBall: data.pokeBall,
             }),
           },
         });
