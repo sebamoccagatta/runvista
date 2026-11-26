@@ -2,6 +2,8 @@ import type { FastifyPluginAsync, FastifyRequest } from 'fastify';
 
 import { createRunSchema, runIdParamsSchema, updateRunSchema } from './run.schemas.js';
 
+import { overlayEventBus } from '../run-overlays/overlay-events.js';
+
 import type { RunService } from './run.service.js';
 
 type RunOperations = Pick<RunService, 'create' | 'list' | 'getById' | 'update' | 'remove'>;
@@ -9,8 +11,6 @@ type RunOperations = Pick<RunService, 'create' | 'list' | 'getById' | 'update' |
 export interface RunRoutesDependencies {
   service: RunOperations;
 
-  // Debe obtener la identidad de una sesión
-  // o credencial validada por el servidor.
   resolveActorId: (request: FastifyRequest) => string | null | Promise<string | null>;
 }
 
@@ -108,6 +108,10 @@ export function createRunRoutes({
           error: 'RUN_NOT_FOUND',
         });
       }
+
+      // Invalidar todos los overlays conectados
+      // después de eliminar correctamente la partida.
+      overlayEventBus.deleteRun(parsed.data.id);
 
       return reply.code(204).send();
     });

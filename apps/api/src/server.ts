@@ -8,7 +8,9 @@ import { resolveServerSecurityConfig } from './server.config.js';
 
 import { AuthLoginService } from './modules/auth/auth.login-service.js';
 import { AuthSessionService } from './modules/auth/auth.session-service.js';
+
 import { SESSION_COOKIE_NAME, isValidSessionToken } from './modules/auth/auth.session.js';
+
 import { AuthUserService } from './modules/auth/auth.user-service.js';
 import { TwitchAuthService } from './modules/auth/twitch.auth-service.js';
 import { parseTwitchConfig } from './modules/auth/twitch.config.js';
@@ -16,6 +18,8 @@ import { parseTwitchConfig } from './modules/auth/twitch.config.js';
 import { RunService } from './modules/runs/run.service.js';
 import { RunConfigurationService } from './modules/run-configuration/run-configuration.service.js';
 import { RunPokemonService } from './modules/run-pokemon/run-pokemon.service.js';
+import { RunPokemonPublicationService } from './modules/run-pokemon/run-pokemon-publication.service.js';
+import { RunOverlayService } from './modules/run-overlays/run-overlay.service.js';
 
 function extractSessionToken(cookieHeader: string | undefined): string | null {
   if (!cookieHeader) {
@@ -75,6 +79,8 @@ const loginService = new AuthLoginService(twitchAuth, authUsers, sessions);
 const runs = new RunService(prisma);
 const runConfiguration = new RunConfigurationService(prisma);
 const runPokemon = new RunPokemonService(prisma);
+const pokemonPublication = new RunPokemonPublicationService(prisma);
+const runOverlays = new RunOverlayService(prisma);
 
 async function resolveActorId(request: FastifyRequest): Promise<string | null> {
   const token = extractSessionToken(request.headers.cookie);
@@ -109,11 +115,62 @@ const app = buildApp({
     service: runPokemon,
     resolveActorId,
   },
+
+  pokemonPublication: {
+    service: pokemonPublication,
+    resolveActorId,
+  },
+
+  runOverlays: {
+    service: runOverlays,
+    resolveActorId,
+  },
+
+  obsOverlays: {
+    service: runOverlays,
+    resolveActorId,
+  },
 });
 
 app.addHook('onClose', async () => {
   await prisma.$disconnect();
 });
+
+const SHUTDOWN_TIMEOUT_MS = 10_000;
+
+let shuttingDown = false;
+
+async function shutdown(signal: NodeJS.Signals): Promise<void> {
+  if (shuttingDown) {
+    return;
+  }
+
+  shuttingDown = true;
+
+  app.log.info({ signal }, 'Shutting down Runvista API');
+
+  // Si algún cliente retiene la conexión, forzamos la salida
+  // para que el proceso no quede colgado indefinidamente.
+  setTimeout(() => {
+    app.log.error('Forced shutdown after timeout');
+    process.exit(1);
+  }, SHUTDOWN_TIMEOUT_MS).unref();
+
+  try {
+    // Dispara el preClose de overlays: SSE recibe server-shutdown
+    // y se cierran las conexiones antes de desconectar la base.
+    await app.close();
+
+    process.exit(0);
+  } catch (error) {
+    app.log.error(error);
+
+    process.exit(1);
+  }
+}
+
+process.once('SIGINT', () => void shutdown('SIGINT'));
+process.once('SIGTERM', () => void shutdown('SIGTERM'));
 
 try {
   await prisma.$connect();
