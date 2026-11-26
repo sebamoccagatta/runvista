@@ -59,7 +59,8 @@ describe('Public OBS overlay publication', () => {
 
     const result = await service.getPublicOverlay(token);
 
-    expect(result?.pokemon).toEqual([publishedPokemon]);
+    // Los snapshots anteriores a pokeBall se devuelven con ball nula.
+    expect(result?.pokemon).toEqual([{ ...publishedPokemon, pokeBall: null }]);
   });
 
   it('does not query the live RunPokemon team', async () => {
@@ -121,7 +122,8 @@ describe('Public OBS overlay publication', () => {
 
     const result = await service.getPublicOverlay(token);
 
-    expect(result?.pokemon).toEqual([publishedPokemon]);
+    // Los snapshots anteriores a pokeBall se devuelven con ball nula.
+    expect(result?.pokemon).toEqual([{ ...publishedPokemon, pokeBall: null }]);
 
     const query = findFirst.mock.calls[0]?.[0];
 

@@ -109,6 +109,7 @@ async function run() {
     nickname: 'Charizard original',
     level: 50,
     isShiny: false,
+    pokeBall: 'ultra-ball',
     status: 'TEAM',
     teamSlot: 1,
   });
@@ -156,6 +157,7 @@ async function run() {
     assert.equal(result.publication.version, 1);
     assert.equal(result.publication.pokemon.length, 1);
     assert.equal(result.publication.pokemon[0]?.nickname, 'Charizard original');
+    assert.equal(result.publication.pokemon[0]?.pokeBall, 'ultra-ball');
 
     const persisted = await prisma.runPublishedTeam.findUnique({
       where: { runId },
@@ -182,6 +184,7 @@ async function run() {
       nickname: 'Charizard modificado',
       level: 70,
       isShiny: true,
+      pokeBall: 'master-ball',
     });
 
     assert.ok(updated.found);
@@ -190,6 +193,7 @@ async function run() {
 
     assert.ok(result);
     assert.equal(result.pokemon[0]?.nickname, 'Charizard original');
+    assert.equal(result.pokemon[0]?.pokeBall, 'ultra-ball');
 
     assert.equal(result.pokemon[0]?.level, 50);
     assert.equal(result.pokemon[0]?.isShiny, false);
