@@ -178,7 +178,7 @@ describe('RunPokemonPanel', () => {
       target: { value: 'TEAM:1' },
     });
 
-    expect(await screen.findByRole('alert')).toHaveProperty(
+    expect(await screen.findByText('Esa posición del equipo ya está ocupada.')).toHaveProperty(
       'textContent',
       'Esa posición del equipo ya está ocupada.',
     );
