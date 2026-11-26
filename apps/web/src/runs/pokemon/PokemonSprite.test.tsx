@@ -136,4 +136,17 @@ describe('PokemonSprite', () => {
 
     expect(image.getAttribute('src')).toBe(`${SPRITE_BASE}/other/official-artwork/shiny/25.png`);
   });
+
+  it('starts from the first source when the species changes after a failed fallback', () => {
+    const { rerender } = render(<PokemonSprite speciesId={25} />);
+
+    const first = screen.getByRole('img', { name: 'Pikachu' });
+    fireEvent.error(first);
+    expect(first.getAttribute('src')).toBe(`${SPRITE_BASE}/25.png`);
+
+    rerender(<PokemonSprite speciesId={1} />);
+
+    const next = screen.getByRole('img', { name: /Bulbasaur/ });
+    expect(next.getAttribute('src')).toBe(`${SPRITE_BASE}/other/official-artwork/1.png`);
+  });
 });

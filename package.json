@@ -10,7 +10,7 @@
   "scripts": {
     "lint": "eslint .",
     "build": "pnpm typecheck && pnpm -r --filter @runvista/web --filter @runvista/api run build",
-    "dev": "pnpm --parallel --filter @runvista/web --filter @runvista/api run dev",
+    "dev": "pnpm --filter @runvista/pokemon build && pnpm --parallel --filter @runvista/web --filter @runvista/api run dev",
     "test": "vitest run",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

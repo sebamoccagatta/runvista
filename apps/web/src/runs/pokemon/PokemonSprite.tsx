@@ -37,7 +37,7 @@ function SpriteImage({
   loading,
   className,
 }: SpriteImageProps) {
-  const [sourceIndex, setSourceIndex] = useState(0);
+  const [failure, setFailure] = useState({ key: '', index: 0 });
 
   const species = getPokemonSpecies(speciesId);
 
@@ -47,6 +47,11 @@ function SpriteImage({
       : undefined;
 
   const sources = getPokemonSpriteUrls(speciesId, isShiny, pokemonId);
+
+  // Un fallo solo vale para la lista de URLs que lo produjo.
+  // Si cambia la especie, volvemos a la primera fuente.
+  const sourceKey = sources.join('|');
+  const sourceIndex = failure.key === sourceKey ? failure.index : 0;
 
   const displayName = variety?.displayName ?? species?.displayName ?? `Pokémon #${speciesId}`;
 
@@ -67,7 +72,7 @@ function SpriteImage({
           draggable={false}
           className="h-full w-full object-contain"
           onError={() => {
-            setSourceIndex((current) => current + 1);
+            setFailure({ key: sourceKey, index: sourceIndex + 1 });
           }}
         />
       ) : (

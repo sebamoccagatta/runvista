@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "pnpm --filter @runvista/pokemon build && tsx watch src/server.ts",
+    "dev": "tsx watch src/server.ts",
     "build": "pnpm --filter @runvista/pokemon build && pnpm run db:generate && tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "typecheck": "pnpm --filter @runvista/pokemon build && pnpm run db:generate && tsc --noEmit -p tsconfig.json",

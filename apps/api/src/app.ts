@@ -14,11 +14,30 @@ import {
   type RunPokemonRoutesDependencies,
 } from './modules/run-pokemon/run-pokemon.routes.js';
 
+import {
+  createRunPokemonPublicationRoutes,
+  type RunPokemonPublicationRoutesDependencies,
+} from './modules/run-pokemon/run-pokemon-publication.routes.js';
+
+import {
+  createRunOverlayRoutes,
+  type RunOverlayRoutesDependencies,
+} from './modules/run-overlays/run-overlay.routes.js';
+
+import {
+  createObsOverlayAccessRoutes,
+  createPublicObsOverlayRoutes,
+  type ObsOverlayRoutesDependencies,
+} from './modules/run-overlays/obs-overlay.routes.js';
+
 export interface BuildAppOptions {
   auth?: AuthRoutesOptions;
   runs?: RunRoutesDependencies;
   runConfiguration?: RunConfigurationRoutesDependencies;
   runPokemon?: RunPokemonRoutesDependencies;
+  pokemonPublication?: RunPokemonPublicationRoutesDependencies;
+  runOverlays?: RunOverlayRoutesDependencies;
+  obsOverlays?: ObsOverlayRoutesDependencies;
   allowedOrigins?: readonly string[];
 }
 
@@ -26,6 +45,16 @@ const WRITE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
 function isRunRoute(path: string): boolean {
   return path === '/api/runs' || path.startsWith('/api/runs/');
+}
+
+function safeLogPath(url: string): string {
+  const path = url.split('?')[0] ?? '';
+
+  if (path.startsWith('/api/obs/overlays/')) {
+    return '/api/obs/overlays/[REDACTED]';
+  }
+
+  return path;
 }
 
 export function buildApp(options: BuildAppOptions = {}) {
@@ -37,7 +66,7 @@ export function buildApp(options: BuildAppOptions = {}) {
         req(request) {
           return {
             method: request.method,
-            path: request.url.split('?')[0],
+            path: safeLogPath(request.url),
           };
         },
       },
@@ -49,10 +78,15 @@ export function buildApp(options: BuildAppOptions = {}) {
     },
   });
 
-  // Protección CSRF para todas las escrituras
-  // de partidas, configuraciones y Pokémon.
   app.addHook('onRequest', async (request, reply) => {
-    if (!options.runs && !options.runConfiguration && !options.runPokemon) {
+    if (
+      !options.runs &&
+      !options.runConfiguration &&
+      !options.runPokemon &&
+      !options.pokemonPublication &&
+      !options.runOverlays &&
+      !options.obsOverlays
+    ) {
       return;
     }
 
@@ -90,6 +124,20 @@ export function buildApp(options: BuildAppOptions = {}) {
 
   if (options.runPokemon) {
     app.register(createRunPokemonRoutes(options.runPokemon));
+  }
+
+  if (options.pokemonPublication) {
+    app.register(createRunPokemonPublicationRoutes(options.pokemonPublication));
+  }
+
+  if (options.runOverlays) {
+    app.register(createRunOverlayRoutes(options.runOverlays));
+  }
+
+  if (options.obsOverlays) {
+    app.register(createObsOverlayAccessRoutes(options.obsOverlays));
+
+    app.register(createPublicObsOverlayRoutes(options.obsOverlays));
   }
 
   return app;
