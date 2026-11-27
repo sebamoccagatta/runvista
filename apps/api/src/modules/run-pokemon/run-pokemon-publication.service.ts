@@ -59,6 +59,7 @@ export class RunPokemonPublicationService {
             nickname: true,
             level: true,
             isShiny: true,
+            pokeBall: true,
             teamSlot: true,
           },
           orderBy: { teamSlot: 'asc' },
@@ -75,6 +76,7 @@ export class RunPokemonPublicationService {
             nickname: member.nickname,
             level: member.level,
             isShiny: member.isShiny,
+            pokeBall: member.pokeBall,
             teamSlot: member.teamSlot,
           };
         });

@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 
+import { isPokeBallKey } from '@runvista/pokemon/pokeballs';
+
 import { isOverlayLayout, type OverlayLayout } from '../runs/overlays/overlay.api';
 
 import { OverlayRenderer, type OverlayTeamPokemon } from '../runs/overlays/OverlayRenderer';
@@ -60,12 +62,19 @@ function isTeamPokemon(value: unknown): value is OverlayTeamPokemon {
     value.teamSlot >= 1 &&
     value.teamSlot <= 6;
 
+  // Snapshots anteriores a pokeBall no tienen el campo.
+  const validPokeBall =
+    value.pokeBall === undefined ||
+    value.pokeBall === null ||
+    (typeof value.pokeBall === 'string' && isPokeBallKey(value.pokeBall));
+
   return (
     validSpecies &&
     validPokemonId &&
     validNickname &&
     validLevel &&
     typeof value.isShiny === 'boolean' &&
+    validPokeBall &&
     validSlot
   );
 }

@@ -9,6 +9,7 @@ import {
   type RunPokemon,
 } from './pokemon.api';
 import { PokemonSpeciesSelect } from './PokemonSpeciesSelect';
+import { PokeBallSelect } from './PokeBallSelect';
 import { PokemonVarietySelect } from './PokemonVarietySelect';
 
 interface CreatePokemonFormProps {
@@ -38,6 +39,7 @@ export function CreatePokemonForm({
   const [nickname, setNickname] = useState('');
   const [level, setLevel] = useState('');
   const [isShiny, setIsShiny] = useState(false);
+  const [pokeBall, setPokeBall] = useState<string | null>(null);
   const [status, setStatus] = useState<PokemonStatus>('BOX');
   const [teamSlot, setTeamSlot] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
@@ -65,6 +67,7 @@ export function CreatePokemonForm({
     setNickname('');
     setLevel('');
     setIsShiny(false);
+    setPokeBall(null);
     setStatus('BOX');
     setTeamSlot(null);
     setError(null);
@@ -99,6 +102,7 @@ export function CreatePokemonForm({
         nickname: nickname.trim() || null,
         level: parsedLevel,
         isShiny,
+        pokeBall,
         status,
         ...(status === 'TEAM' ? { teamSlot } : {}),
       });
@@ -177,6 +181,13 @@ export function CreatePokemonForm({
             )}
           </div>
         </div>
+
+        <PokeBallSelect
+          id="pokemon-poke-ball"
+          value={pokeBall}
+          onChange={setPokeBall}
+          disabled={saving}
+        />
 
         <label className="flex items-center gap-3 rounded-xl border border-white/10 bg-surface-raised px-4 py-3">
           <input

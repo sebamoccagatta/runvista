@@ -1,3 +1,4 @@
+import { isPokeBallKey } from '@runvista/pokemon/pokeballs';
 import { isPokemonSpeciesId } from '@runvista/pokemon/species';
 import { isPokemonVarietyForSpecies } from '@runvista/pokemon/varieties';
 import { z } from 'zod';
@@ -15,6 +16,13 @@ export const pokemonNicknameSchema = z.string().trim().max(50).nullable();
 export const pokemonLevelSchema = z.number().int().min(1).max(100).nullable();
 
 export const teamSlotSchema = z.number().int().min(1).max(6).nullable();
+
+export const pokeBallSchema = z
+  .string()
+  .refine(isPokeBallKey, {
+    error: 'Unsupported Poke Ball',
+  })
+  .nullable();
 
 function validatePosition(
   data: {
@@ -47,6 +55,7 @@ export const createRunPokemonSchema = z
     nickname: pokemonNicknameSchema.optional(),
     level: pokemonLevelSchema.optional(),
     isShiny: z.boolean().default(false),
+    pokeBall: pokeBallSchema.optional(),
     status: runPokemonStatusSchema.default('BOX'),
     teamSlot: teamSlotSchema.optional(),
   })
@@ -68,6 +77,7 @@ export const updateRunPokemonSchema = z
     nickname: pokemonNicknameSchema.optional(),
     level: pokemonLevelSchema.optional(),
     isShiny: z.boolean().optional(),
+    pokeBall: pokeBallSchema.optional(),
   })
   .refine((data) => Object.values(data).some((value) => value !== undefined), {
     error: 'At least one field must be provided',

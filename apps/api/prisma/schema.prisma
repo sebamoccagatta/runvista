@@ -93,6 +93,9 @@ model RunPokemon {
   level     Int?
   isShiny   Boolean @default(false)
 
+  // Clave de la Poké Ball usada en la captura (ver @runvista/pokemon/pokeballs).
+  pokeBall String? @db.VarChar(30)
+
   status   RunPokemonStatus @default(BOX)
   teamSlot Int?
 

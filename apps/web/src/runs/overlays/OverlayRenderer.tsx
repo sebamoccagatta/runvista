@@ -3,7 +3,10 @@ import { useState } from 'react';
 import { getPokemonSpecies } from '@runvista/pokemon/species';
 import { getPokemonVariety } from '@runvista/pokemon/varieties';
 
+import { getPokeBall } from '@runvista/pokemon/pokeballs';
+
 import { getPokemonSpriteUrls } from '../pokemon/pokemon-sprites';
+import { PokeBallArt } from './PokeBallArt';
 
 import type { OverlayLayout } from './overlay.api';
 
@@ -13,6 +16,8 @@ export interface OverlayTeamPokemon {
   nickname: string | null;
   level: number | null;
   isShiny: boolean;
+  // Clave de la Poké Ball. Snapshots anteriores pueden no incluirla.
+  pokeBall?: string | null;
   teamSlot: number | null;
   status?: 'TEAM' | 'BOX' | 'FAINTED';
   id?: string;
@@ -89,6 +94,8 @@ export function OverlayRenderer({ layout, pokemon }: OverlayRendererProps) {
         const formName = getFormName(member);
         const displayName = member.nickname || formName;
 
+        const ball = member.pokeBall ? getPokeBall(member.pokeBall) : undefined;
+
         const hasText =
           element.showNickname ||
           element.showSpecies ||
@@ -105,16 +112,29 @@ export function OverlayRenderer({ layout, pokemon }: OverlayRendererProps) {
               height: element.height,
             }}
           >
-            <div className="min-h-0 w-full flex-1">
-              <OverlayPokemonImage
-                key={`${member.id ?? element.slot}-${member.pokemonId ?? 'default'}-${member.isShiny}`}
-                pokemon={member}
-              />
+            <div className="relative min-h-0 w-full flex-1">
+              {ball && (
+                // Más grande que el sprite (115 % del alto) para que siempre asome por
+                // los bordes. Se ancla abajo y sobresale hacia la zona del texto, no
+                // hacia arriba, donde la tarjeta la recortaría. Va antes en el DOM y el
+                // sprite tiene `relative`, así que el sprite se pinta encima.
+                <PokeBallArt
+                  ball={ball}
+                  className="absolute bottom-0 left-1/2 aspect-square h-[115%] -translate-x-1/2 translate-y-[13%] opacity-85"
+                />
+              )}
+
+              <div className="relative h-full w-full">
+                <OverlayPokemonImage
+                  key={`${member.id ?? element.slot}-${member.pokemonId ?? 'default'}-${member.isShiny}`}
+                  pokemon={member}
+                />
+              </div>
             </div>
 
             {hasText && (
               <div
-                className="max-w-full rounded-lg bg-black/65 px-3 py-1.5 text-center text-4xl font-bold leading-tight text-white"
+                className="relative max-w-full rounded-lg bg-black/65 px-3 py-1.5 text-center text-4xl font-bold leading-tight text-white"
                 style={{
                   textShadow: '0 2px 4px rgba(0,0,0,0.8)',
                 }}
