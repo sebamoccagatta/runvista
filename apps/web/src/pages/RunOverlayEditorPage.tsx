@@ -1,6 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router';
 
+import {
+  cloneOverlayStyle,
+  DEFAULT_OVERLAY_STYLE,
+  resolveElementStyle,
+  type OverlayStyle,
+  type OverlayStylePatch,
+} from '@runvista/overlay-engine';
+
 import { listRunPokemon, type RunPokemon } from '../runs/pokemon/pokemon.api';
 
 import {
@@ -16,6 +24,8 @@ import {
 } from '../runs/overlays/overlay.api';
 
 import { OverlayCanvas } from '../runs/overlays/OverlayCanvas';
+
+import { OverlayStyleControls, type StyleGroup } from '../runs/overlays/OverlayStyleControls';
 
 import { inputStyles, primaryButton, secondaryButton } from '../runs/types';
 
@@ -120,6 +130,72 @@ function RunOverlayEditor({ runId }: { runId: string | undefined }) {
     });
 
     changeLayout({ ...layout, elements: nextElements });
+  }
+
+  function updateCommonStyle<G extends StyleGroup>(group: G, changes: Partial<OverlayStyle[G]>) {
+    changeLayout({
+      ...layout,
+      style: { ...layout.style, [group]: { ...layout.style[group], ...changes } },
+    });
+  }
+
+  function resetCommonStyle() {
+    changeLayout({ ...layout, style: cloneOverlayStyle(DEFAULT_OVERLAY_STYLE) });
+  }
+
+  /** Reemplaza el ajuste de un espacio. `undefined` lo quita y vuelve al estilo común. */
+  function setElementStyle(slot: number, style: OverlayStylePatch | undefined) {
+    changeLayout({
+      ...layout,
+      elements: layout.elements.map((element) => {
+        if (element.slot !== slot) {
+          return element;
+        }
+
+        const next = { ...element };
+        delete next.style;
+
+        return style === undefined ? next : { ...next, style };
+      }),
+    });
+  }
+
+  function updateElementStyle<G extends StyleGroup>(
+    slot: number,
+    group: G,
+    changes: Partial<OverlayStyle[G]>,
+  ) {
+    const current = layout.elements.find((element) => element.slot === slot)?.style ?? {};
+
+    setElementStyle(slot, { ...current, [group]: { ...current[group], ...changes } });
+  }
+
+  function resetElementStyleGroup(slot: number, group: StyleGroup) {
+    const next: OverlayStylePatch = {
+      ...(layout.elements.find((element) => element.slot === slot)?.style ?? {}),
+    };
+
+    delete next[group];
+
+    setElementStyle(slot, next);
+  }
+
+  /** Vuelve a las posiciones por defecto sin perder el estilo común ni los ajustes por posición. */
+  function resetDistribution() {
+    const defaults = createDefaultOverlayLayout();
+
+    changeLayout({
+      ...defaults,
+      style: layout.style,
+      animations: layout.animations,
+      elements: defaults.elements.map((element) => {
+        const previous = layout.elements.find((item) => item.slot === element.slot);
+
+        return previous?.style ? { ...element, style: previous.style } : element;
+      }),
+    });
+
+    setSelectedSlot(1);
   }
 
   function selectOverlay(value: string) {
@@ -357,7 +433,9 @@ function RunOverlayEditor({ runId }: { runId: string | undefined }) {
             />
 
             <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
-              <section className="min-w-0 space-y-4 rounded-card border border-white/10 bg-surface p-4 sm:p-6">
+              {/* Fijo en pantallas anchas: el panel de estilo es largo y así el lienzo
+                  sigue a la vista mientras se ajustan los controles. */}
+              <section className="min-w-0 space-y-4 rounded-card border border-white/10 bg-surface p-4 sm:p-6 xl:sticky xl:top-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <h2 className="text-lg font-bold">Vista de edición</h2>
 
@@ -498,13 +576,82 @@ function RunOverlayEditor({ runId }: { runId: string | undefined }) {
                   </>
                 )}
 
+                <section
+                  aria-labelledby="common-style-title"
+                  className="space-y-3 border-t border-white/10 pt-4"
+                >
+                  <div>
+                    <h3 id="common-style-title" className="text-sm font-bold">
+                      Estilo del equipo
+                    </h3>
+                    <p className="mt-1 text-xs text-text-secondary">
+                      Se aplica a las seis posiciones.
+                    </p>
+                  </div>
+
+                  <OverlayStyleControls
+                    idPrefix="common"
+                    style={layout.style}
+                    onChange={updateCommonStyle}
+                  />
+
+                  <button
+                    type="button"
+                    className={`${secondaryButton} w-full`}
+                    onClick={resetCommonStyle}
+                  >
+                    Restablecer estilo
+                  </button>
+                </section>
+
+                {selectedElement && (
+                  <section
+                    aria-labelledby="slot-style-title"
+                    className="space-y-3 border-t border-white/10 pt-4"
+                  >
+                    <div>
+                      <h3 id="slot-style-title" className="text-sm font-bold">
+                        Estilo de la posición {selectedSlot}
+                      </h3>
+                      <p className="mt-1 text-xs text-text-secondary">
+                        Cambiá solo lo que quieras distinto del estilo del equipo.
+                      </p>
+                    </div>
+
+                    <label className="flex min-h-10 items-center justify-between gap-3 text-sm">
+                      <span>Personalizar esta posición</span>
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 accent-accent"
+                        checked={selectedElement.style !== undefined}
+                        onChange={(event) =>
+                          setElementStyle(selectedSlot, event.target.checked ? {} : undefined)
+                        }
+                      />
+                    </label>
+
+                    {selectedElement.style !== undefined && (
+                      <OverlayStyleControls
+                        idPrefix={`slot-${selectedSlot}`}
+                        style={resolveElementStyle(layout, selectedElement)}
+                        onChange={(group, changes) =>
+                          updateElementStyle(selectedSlot, group, changes)
+                        }
+                        overridden={{
+                          card: selectedElement.style.card !== undefined,
+                          label: selectedElement.style.label !== undefined,
+                          ball: selectedElement.style.ball !== undefined,
+                        }}
+                        onResetGroup={(group) => resetElementStyleGroup(selectedSlot, group)}
+                      />
+                    )}
+                  </section>
+                )}
+
                 <button
                   type="button"
                   className={`${secondaryButton} w-full`}
-                  onClick={() => {
-                    changeLayout(createDefaultOverlayLayout());
-                    setSelectedSlot(1);
-                  }}
+                  onClick={resetDistribution}
                 >
                   Restablecer distribución
                 </button>
