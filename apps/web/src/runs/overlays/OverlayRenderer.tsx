@@ -3,6 +3,12 @@ import { useState } from 'react';
 import { getPokemonSpecies } from '@runvista/pokemon/species';
 import { getPokemonVariety } from '@runvista/pokemon/varieties';
 
+import {
+  FONT_FAMILY_STACKS,
+  getDetailFontSize,
+  hexToRgba,
+  resolveElementStyle,
+} from '@runvista/overlay-engine';
 import { getPokeBall } from '@runvista/pokemon/pokeballs';
 
 import { getPokemonSpriteUrls } from '../pokemon/pokemon-sprites';
@@ -96,6 +102,16 @@ export function OverlayRenderer({ layout, pokemon }: OverlayRendererProps) {
 
         const ball = member.pokeBall ? getPokeBall(member.pokeBall) : undefined;
 
+        // Estilo común del overlay con el ajuste de este espacio encima.
+        const style = resolveElementStyle(layout, element);
+
+        // La ball queda anclada abajo y sobresale hacia la zona del texto, no hacia
+        // arriba, donde la tarjeta la recortaría. Desplazamos lo que excede su alto.
+        const ballShift =
+          style.ball.scale > 1 ? ((style.ball.scale - 1) / style.ball.scale) * 100 : 0;
+
+        const detailFontSize = getDetailFontSize(style.label.fontSize);
+
         const hasText =
           element.showNickname ||
           element.showSpecies ||
@@ -110,17 +126,26 @@ export function OverlayRenderer({ layout, pokemon }: OverlayRendererProps) {
               top: element.y,
               width: element.width,
               height: element.height,
+              backgroundColor: hexToRgba(style.card.background, style.card.backgroundOpacity),
+              borderRadius: style.card.radius,
+              ...(style.card.borderWidth > 0
+                ? { border: `${style.card.borderWidth}px solid ${style.card.borderColor}` }
+                : {}),
             }}
           >
             <div className="relative min-h-0 w-full flex-1">
               {ball && (
-                // Más grande que el sprite (115 % del alto) para que siempre asome por
-                // los bordes. Se ancla abajo y sobresale hacia la zona del texto, no
-                // hacia arriba, donde la tarjeta la recortaría. Va antes en el DOM y el
-                // sprite tiene `relative`, así que el sprite se pinta encima.
+                // Va antes en el DOM y el sprite tiene `relative`, así que el sprite se
+                // pinta encima. El tamaño y la opacidad salen del estilo del espacio.
                 <PokeBallArt
                   ball={ball}
-                  className="absolute bottom-0 left-1/2 aspect-square h-[115%] -translate-x-1/2 translate-y-[13%] opacity-85"
+                  className="absolute bottom-0 aspect-square"
+                  style={{
+                    left: '50%',
+                    height: `${style.ball.scale * 100}%`,
+                    opacity: style.ball.opacity,
+                    transform: `translate(-50%, ${ballShift}%)`,
+                  }}
                 />
               )}
 
@@ -134,19 +159,30 @@ export function OverlayRenderer({ layout, pokemon }: OverlayRendererProps) {
 
             {hasText && (
               <div
-                className="relative max-w-full rounded-lg bg-black/65 px-3 py-1.5 text-center text-4xl font-bold leading-tight text-white"
+                className="relative max-w-full rounded-lg px-3 py-1.5 text-center font-bold leading-tight"
                 style={{
-                  textShadow: '0 2px 4px rgba(0,0,0,0.8)',
+                  backgroundColor: hexToRgba(style.label.background, style.label.backgroundOpacity),
+                  color: style.label.color,
+                  fontSize: style.label.fontSize,
+                  fontFamily: FONT_FAMILY_STACKS[style.label.fontFamily],
+                  textShadow: style.label.shadow ? '0 2px 4px rgba(0,0,0,0.8)' : 'none',
                 }}
               >
                 {element.showNickname && <span>{displayName}</span>}
 
                 {element.showSpecies && (!element.showNickname || displayName !== formName) && (
-                  <span className="block text-2xl font-medium text-white/90">{formName}</span>
+                  <span
+                    className="block font-medium"
+                    style={{ fontSize: detailFontSize, opacity: 0.9 }}
+                  >
+                    {formName}
+                  </span>
                 )}
 
                 {element.showLevel && member.level !== null && (
-                  <span className="block text-2xl text-white/90">Nv. {member.level}</span>
+                  <span className="block" style={{ fontSize: detailFontSize, opacity: 0.9 }}>
+                    Nv. {member.level}
+                  </span>
                 )}
               </div>
             )}

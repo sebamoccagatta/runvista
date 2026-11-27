@@ -9,7 +9,8 @@ export type FontFamily = (typeof FONT_FAMILIES)[number];
  * instalado en el equipo del streamer, por eso solo hay familias genéricas.
  */
 export const FONT_FAMILY_STACKS: Readonly<Record<FontFamily, string>> = Object.freeze({
-  sans: 'ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+  // Igual que --font-sans de la app, para que el estilo por defecto no cambie la fuente.
+  sans: 'Inter, system-ui, sans-serif',
   serif: 'Georgia, "Times New Roman", serif',
   mono: 'ui-monospace, "Cascadia Code", Consolas, monospace',
   rounded: '"Varela Round", "Nunito", ui-sans-serif, system-ui, sans-serif',
@@ -100,6 +101,22 @@ const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
 
 export function isHexColor(value: unknown): value is string {
   return typeof value === 'string' && HEX_COLOR.test(value);
+}
+
+/**
+ * Convierte #RRGGBB y una opacidad en un color CSS rgba(). Si el valor no es un
+ * color válido devuelve `transparent`: nunca se inserta texto arbitrario en CSS.
+ */
+export function hexToRgba(hex: string, alpha: number): string {
+  if (!isHexColor(hex)) {
+    return 'transparent';
+  }
+
+  const red = parseInt(hex.slice(1, 3), 16);
+  const green = parseInt(hex.slice(3, 5), 16);
+  const blue = parseInt(hex.slice(5, 7), 16);
+
+  return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
 }
 
 /**

@@ -1,8 +1,11 @@
+import type { CSSProperties } from 'react';
+
 import type { PokeBall } from '@runvista/pokemon/pokeballs';
 
 interface PokeBallArtProps {
   ball: PokeBall;
   className?: string;
+  style?: CSSProperties;
 }
 
 const OUTLINE = '#1b1b1b';
@@ -12,7 +15,7 @@ const OUTLINE = '#1b1b1b';
  * se ve nítida a cualquier tamaño, algo necesario en un lienzo de 1920×1080.
  * Es una versión estilizada, no el arte oficial.
  */
-export function PokeBallArt({ ball, className }: PokeBallArtProps) {
+export function PokeBallArt({ ball, className, style }: PokeBallArtProps) {
   const { top, bottom, accent } = ball.colors;
 
   return (
@@ -22,6 +25,7 @@ export function PokeBallArt({ ball, className }: PokeBallArtProps) {
       focusable="false"
       data-poke-ball={ball.key}
       className={className}
+      style={style}
     >
       <path d="M4 50 A46 46 0 0 1 96 50 Z" fill={top} />
       <path d="M4 50 A46 46 0 0 0 96 50 Z" fill={bottom} />

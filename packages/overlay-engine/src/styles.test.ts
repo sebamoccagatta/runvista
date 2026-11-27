@@ -4,6 +4,7 @@ import {
   FONT_FAMILIES,
   FONT_FAMILY_STACKS,
   getDetailFontSize,
+  hexToRgba,
   isHexColor,
   isValidOverlayStyle,
   isValidStylePatch,
@@ -83,6 +84,24 @@ describe('font families', () => {
   it('accepts only the closed list', () => {
     expect(isValidStylePatch({ label: { fontFamily: 'serif' } })).toBe(true);
     expect(isValidStylePatch({ label: { fontFamily: 'Comic Sans' } })).toBe(false);
+  });
+});
+
+describe('hexToRgba', () => {
+  it('converts a hex color and an opacity to rgba', () => {
+    expect(hexToRgba('#000000', 0.65)).toBe('rgba(0, 0, 0, 0.65)');
+    expect(hexToRgba('#FFCC00', 1)).toBe('rgba(255, 204, 0, 1)');
+  });
+
+  it('never outputs arbitrary text for invalid colors', () => {
+    expect(hexToRgba('red', 1)).toBe('transparent');
+    expect(hexToRgba('#000000; background:url(x)', 1)).toBe('transparent');
+  });
+});
+
+describe('default sans font', () => {
+  it('matches the app font so the default style does not change the text', () => {
+    expect(FONT_FAMILY_STACKS.sans).toBe('Inter, system-ui, sans-serif');
   });
 });
 
