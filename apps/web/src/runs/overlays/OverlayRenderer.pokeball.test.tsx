@@ -5,6 +5,8 @@
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 
+import { POKE_BALLS } from '@runvista/pokemon/pokeballs';
+
 import { OverlayRenderer, type OverlayTeamPokemon } from './OverlayRenderer';
 import { createDefaultOverlayLayout } from './overlay.api';
 
@@ -33,11 +35,57 @@ describe('OverlayRenderer Poke Ball', () => {
       />,
     );
 
-    const ball = container.querySelector('img[src$="ultra-ball.png"]');
+    const ball = container.querySelector('svg[data-poke-ball="ultra-ball"]');
 
     expect(ball).not.toBeNull();
     expect(ball?.getAttribute('aria-hidden')).toBe('true');
-    expect(ball?.getAttribute('alt')).toBe('');
+  });
+
+  it('paints the ball before the sprite so the sprite stays on top', () => {
+    const { container } = render(
+      <OverlayRenderer
+        layout={createDefaultOverlayLayout()}
+        pokemon={[member({ pokeBall: 'master-ball' })]}
+      />,
+    );
+
+    const ball = container.querySelector('svg[data-poke-ball]');
+    const sprite = container.querySelector('img');
+
+    expect(ball).not.toBeNull();
+    expect(sprite).not.toBeNull();
+    // DOM order decides paint order among positioned siblings.
+    expect(ball!.compareDocumentPosition(sprite!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('is larger than the sprite area and anchored to the bottom', () => {
+    const { container } = render(
+      <OverlayRenderer
+        layout={createDefaultOverlayLayout()}
+        pokemon={[member({ pokeBall: 'great-ball' })]}
+      />,
+    );
+
+    const className = container.querySelector('svg[data-poke-ball]')?.getAttribute('class') ?? '';
+
+    expect(className).toContain('h-[115%]');
+    expect(className).toContain('bottom-0');
+    expect(className).toContain('opacity-85');
+  });
+
+  it('draws every catalog ball without errors', () => {
+    for (const ball of POKE_BALLS) {
+      const { container, unmount } = render(
+        <OverlayRenderer
+          layout={createDefaultOverlayLayout()}
+          pokemon={[member({ pokeBall: ball.key })]}
+        />,
+      );
+
+      expect(container.querySelector(`svg[data-poke-ball="${ball.key}"]`)).not.toBeNull();
+
+      unmount();
+    }
   });
 
   it('renders no ball when the Pokemon has none', () => {
@@ -45,7 +93,7 @@ describe('OverlayRenderer Poke Ball', () => {
       <OverlayRenderer layout={createDefaultOverlayLayout()} pokemon={[member()]} />,
     );
 
-    expect(container.querySelector('img[src*="/items/"]')).toBeNull();
+    expect(container.querySelector('svg[data-poke-ball]')).toBeNull();
   });
 
   it('renders no ball for a Pokemon with a null ball', () => {
@@ -56,6 +104,6 @@ describe('OverlayRenderer Poke Ball', () => {
       />,
     );
 
-    expect(container.querySelector('img[src*="/items/"]')).toBeNull();
+    expect(container.querySelector('svg[data-poke-ball]')).toBeNull();
   });
 });

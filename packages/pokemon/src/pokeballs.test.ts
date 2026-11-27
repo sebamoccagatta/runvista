@@ -23,6 +23,19 @@ describe('Poke Ball catalog', () => {
     }
   });
 
+  it('defines drawing colors as valid #RRGGBB values', () => {
+    const hex = /^#[0-9a-f]{6}$/i;
+
+    for (const ball of POKE_BALLS) {
+      expect(ball.colors.top).toMatch(hex);
+      expect(ball.colors.bottom).toMatch(hex);
+
+      if (ball.colors.accent !== null) {
+        expect(ball.colors.accent).toMatch(hex);
+      }
+    }
+  });
+
   it('finds balls by key and rejects unknown keys', () => {
     expect(getPokeBall('great-ball')?.name).toBe('Super Ball');
     expect(getPokeBall('no-existe')).toBeUndefined();
