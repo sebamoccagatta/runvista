@@ -55,7 +55,7 @@ export const POKE_BALLS: readonly PokeBall[] = Object.freeze([
     bottom: '#f5f5f5',
     accent: '#e53935',
   }),
-  createPokeBall('timer-ball', 'Cronos Ball', {
+  createPokeBall('timer-ball', 'Turno Ball', {
     top: '#f5f5f5',
     bottom: '#f5f5f5',
     accent: '#e53935',
@@ -65,17 +65,17 @@ export const POKE_BALLS: readonly PokeBall[] = Object.freeze([
     bottom: '#f5f5f5',
     accent: '#fdd835',
   }),
-  createPokeBall('dusk-ball', 'Oscura Ball', {
+  createPokeBall('dusk-ball', 'Ocaso Ball', {
     top: '#2e7d32',
     bottom: '#263238',
     accent: '#ff7043',
   }),
-  createPokeBall('heal-ball', 'Cura Ball', {
+  createPokeBall('heal-ball', 'Sana Ball', {
     top: '#f48fb1',
     bottom: '#f5f5f5',
     accent: '#ec407a',
   }),
-  createPokeBall('net-ball', 'Red Ball', {
+  createPokeBall('net-ball', 'Malla Ball', {
     top: '#26a69a',
     bottom: '#263238',
     accent: '#80cbc4',

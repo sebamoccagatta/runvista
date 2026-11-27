@@ -7,6 +7,29 @@ describe('Poke Ball catalog', () => {
     expect(POKE_BALLS).toHaveLength(16);
   });
 
+  it('uses the official Spanish names from PokeAPI', () => {
+    const names = Object.fromEntries(POKE_BALLS.map((ball) => [ball.key, ball.name]));
+
+    expect(names).toEqual({
+      'poke-ball': 'Poké Ball',
+      'great-ball': 'Super Ball',
+      'ultra-ball': 'Ultra Ball',
+      'master-ball': 'Master Ball',
+      'luxury-ball': 'Lujo Ball',
+      'premier-ball': 'Honor Ball',
+      'timer-ball': 'Turno Ball',
+      'quick-ball': 'Veloz Ball',
+      'dusk-ball': 'Ocaso Ball',
+      'heal-ball': 'Sana Ball',
+      'net-ball': 'Malla Ball',
+      'nest-ball': 'Nido Ball',
+      'dive-ball': 'Buceo Ball',
+      'repeat-ball': 'Acopio Ball',
+      'safari-ball': 'Safari Ball',
+      'level-ball': 'Nivel Ball',
+    });
+  });
+
   it('uses unique keys and names', () => {
     const keys = POKE_BALLS.map((ball) => ball.key);
     const names = POKE_BALLS.map((ball) => ball.name);
