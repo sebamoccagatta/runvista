@@ -1,3 +1,5 @@
+import { hasOnlyKeys, isRecord } from './guards.js';
+
 export const FONT_FAMILIES = ['sans', 'serif', 'mono', 'rounded'] as const;
 
 export type FontFamily = (typeof FONT_FAMILIES)[number];
@@ -106,14 +108,6 @@ export function isHexColor(value: unknown): value is string {
  */
 export function getDetailFontSize(fontSize: number): number {
   return Math.round((fontSize * 2) / 3);
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-function hasOnlyKeys(record: Record<string, unknown>, allowed: readonly string[]): boolean {
-  return Object.keys(record).every((key) => allowed.includes(key));
 }
 
 function isInRange(value: unknown, range: { min: number; max: number }): value is number {

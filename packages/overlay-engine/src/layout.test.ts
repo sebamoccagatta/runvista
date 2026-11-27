@@ -74,6 +74,38 @@ describe('overlay layout versions', () => {
   });
 });
 
+describe('overlay layout strictness', () => {
+  it('rejects unknown top-level properties in both versions', () => {
+    expect(upgradeLayout({ ...v1Layout(), customHtml: '<script>' })).toBeNull();
+    expect(upgradeLayout({ ...v2Layout(), customHtml: '<script>' })).toBeNull();
+  });
+
+  it('rejects unknown element properties', () => {
+    const layout = v2Layout() as unknown as { elements: Record<string, unknown>[] };
+    layout.elements[0]!.onClick = 'alert(1)';
+
+    expect(upgradeLayout(layout)).toBeNull();
+  });
+
+  it('rejects a style on a version 1 element', () => {
+    const layout = v1Layout() as unknown as { elements: Record<string, unknown>[] };
+    layout.elements[0]!.style = { label: { fontSize: 40 } };
+
+    expect(upgradeLayout(layout)).toBeNull();
+  });
+
+  it('rejects unknown canvas and animations properties', () => {
+    expect(
+      upgradeLayout({ ...v2Layout(), canvas: { width: 1920, height: 1080, dpi: 2 } }),
+    ).toBeNull();
+    expect(upgradeLayout({ ...v2Layout(), animations: { enabled: true, speed: 2 } })).toBeNull();
+  });
+
+  it('requires the animations switch to be a boolean', () => {
+    expect(upgradeLayout({ ...v2Layout(), animations: { enabled: 'yes' } })).toBeNull();
+  });
+});
+
 describe('overlay style validation in layouts', () => {
   it('accepts a per-element style patch', () => {
     const layout = v2Layout();

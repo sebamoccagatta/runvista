@@ -2,6 +2,8 @@ import 'dotenv/config';
 
 import assert from 'node:assert/strict';
 
+import { DEFAULT_OVERLAY_STYLE } from '@runvista/overlay-engine';
+
 import { createPrismaClient } from '../src/db/prisma.js';
 
 import { createDefaultOverlayLayout } from '../src/modules/run-overlays/run-overlay.schemas.js';
@@ -140,6 +142,75 @@ async function main() {
   console.log('✓ Excludes OBS credentials from CRUD and preserves dedicated access');
 
   console.log('✓ Updates and reloads custom positions');
+
+  // Overlays guardados antes de los estilos tienen layout v1 en la base.
+  const legacyLayout = {
+    version: 1,
+    canvas: { width: 1920, height: 1080 },
+    elements: Array.from({ length: 6 }, (_, index) => ({
+      slot: index + 1,
+      x: 120 + index * 280,
+      y: 820,
+      width: 220,
+      height: 190,
+      visible: true,
+      showNickname: true,
+      showSpecies: false,
+      showLevel: true,
+    })),
+  };
+
+  const legacy = await prisma.runOverlay.create({
+    data: { runId: run.id, name: 'Legacy v1', layout: legacyLayout },
+  });
+
+  const legacyRead = await service.getById(owner.id, run.id, legacy.id);
+
+  assert.ok(legacyRead);
+  assert.equal((legacyRead.layout as { version: number }).version, 2);
+  assert.deepEqual((legacyRead.layout as { style: unknown }).style, DEFAULT_OVERLAY_STYLE);
+
+  const legacyStored = await prisma.runOverlay.findUniqueOrThrow({ where: { id: legacy.id } });
+
+  assert.equal((legacyStored.layout as { version: number }).version, 1);
+
+  const legacyList = await service.list(owner.id, run.id);
+
+  assert.ok(legacyList.found);
+
+  const legacyListed = legacyList.overlays.find((overlay) => overlay.id === legacy.id);
+
+  assert.equal((legacyListed?.layout as { version: number }).version, 2);
+
+  const legacyToken = await service.issueObsToken(owner.id, run.id, legacy.id);
+
+  assert.ok(legacyToken);
+
+  const legacyPublic = await service.getPublicOverlay(legacyToken);
+
+  assert.ok(legacyPublic);
+  assert.equal(legacyPublic.layout.version, 2);
+
+  console.log('✓ Reads layouts stored as version 1 as version 2 without migrating the database');
+
+  const styledLayout = createDefaultOverlayLayout();
+
+  styledLayout.style.label.fontSize = 48;
+  styledLayout.style.ball.opacity = 0.6;
+  styledLayout.elements[1]!.style = { label: { color: '#ffcc00' }, card: { radius: 16 } };
+
+  const styled = await service.update(owner.id, run.id, legacy.id, { layout: styledLayout });
+
+  assert.ok(styled);
+  assert.deepEqual(styled.layout, styledLayout);
+
+  const styledStored = await prisma.runOverlay.findUniqueOrThrow({ where: { id: legacy.id } });
+
+  assert.deepEqual(styledStored.layout, styledLayout);
+
+  console.log('✓ Saves and reloads a version 2 layout with styles and per-slot overrides');
+
+  await prisma.runOverlay.delete({ where: { id: legacy.id } });
 
   let duplicateRejected = false;
 

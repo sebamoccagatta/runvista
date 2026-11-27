@@ -1,8 +1,9 @@
+import { upgradeLayout, type OverlayLayout } from '@runvista/overlay-engine';
+
 import { Prisma, type PrismaClient } from '../../generated/prisma/client.js';
 
 import {
   createRunOverlaySchema,
-  overlayLayoutSchema,
   updateRunOverlaySchema,
   type CreateRunOverlayInput,
   type UpdateRunOverlayInput,
@@ -25,6 +26,19 @@ function isPrismaError(error: unknown, code: string): boolean {
 
 function toJsonValue(value: CreateRunOverlayInput['layout']): Prisma.InputJsonValue {
   return value as unknown as Prisma.InputJsonValue;
+}
+
+/**
+ * Los overlays guardados antes de los estilos tienen layout v1. Se convierten a
+ * v2 al leerlos, sin migrar la base: se persisten como v2 en el próximo guardado.
+ * Un layout corrupto se devuelve sin cambios, como antes.
+ */
+function withUpgradedLayout<T extends { layout: Prisma.JsonValue }>(
+  overlay: T,
+): Omit<T, 'layout'> & { layout: Prisma.JsonValue | OverlayLayout } {
+  const layout = upgradeLayout(overlay.layout);
+
+  return layout === null ? overlay : { ...overlay, layout };
 }
 
 const overlaySelect = {
@@ -57,12 +71,12 @@ export class RunOverlayService {
 
     return {
       found: true as const,
-      overlays,
+      overlays: overlays.map(withUpgradedLayout),
     };
   }
 
   async getById(actorId: string, runId: string, overlayId: string) {
-    return this.prisma.runOverlay.findFirst({
+    const overlay = await this.prisma.runOverlay.findFirst({
       where: {
         id: overlayId,
         runId,
@@ -70,6 +84,8 @@ export class RunOverlayService {
       },
       select: overlaySelect,
     });
+
+    return overlay ? withUpgradedLayout(overlay) : null;
   }
 
   async create(actorId: string, runId: string, input: CreateRunOverlayInput) {
@@ -97,7 +113,7 @@ export class RunOverlayService {
 
         return {
           found: true as const,
-          overlay,
+          overlay: withUpgradedLayout(overlay),
         };
       });
     } catch (error) {
@@ -221,9 +237,9 @@ export class RunOverlayService {
       return null;
     }
 
-    const parsedLayout = overlayLayoutSchema.safeParse(overlay.layout);
+    const layout = upgradeLayout(overlay.layout);
 
-    if (!parsedLayout.success) {
+    if (layout === null) {
       return null;
     }
 
@@ -235,7 +251,7 @@ export class RunOverlayService {
     }
 
     return {
-      layout: parsedLayout.data,
+      layout,
       pokemon: parsedTeam.data,
     };
   }

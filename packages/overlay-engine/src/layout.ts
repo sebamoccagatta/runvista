@@ -1,3 +1,4 @@
+import { hasOnlyKeys, isInteger, isRecord } from './guards.js';
 import {
   cloneOverlayStyle,
   DEFAULT_OVERLAY_STYLE,
@@ -69,16 +70,25 @@ export function createDefaultOverlayLayout(): OverlayLayout {
   };
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
+const GEOMETRY_KEYS = [
+  'slot',
+  'x',
+  'y',
+  'width',
+  'height',
+  'visible',
+  'showNickname',
+  'showSpecies',
+  'showLevel',
+] as const;
 
-function isInteger(value: unknown): value is number {
-  return typeof value === 'number' && Number.isInteger(value);
-}
-
-function isValidGeometry(element: unknown): element is OverlayElementGeometry {
+function isValidGeometry(element: unknown, allowStyle: boolean): element is OverlayElementGeometry {
   if (!isRecord(element)) {
+    return false;
+  }
+
+  // Sin propiedades desconocidas. `style` solo existe a partir de la versión 2.
+  if (!hasOnlyKeys(element, allowStyle ? [...GEOMETRY_KEYS, 'style'] : GEOMETRY_KEYS)) {
     return false;
   }
 
@@ -115,12 +125,15 @@ function isValidGeometry(element: unknown): element is OverlayElementGeometry {
 }
 
 /** Seis espacios, slots únicos del 1 al 6 y geometría dentro del lienzo. */
-function areElementsValid(elements: unknown): elements is OverlayElementGeometry[] {
+function areElementsValid(
+  elements: unknown,
+  allowStyle: boolean,
+): elements is OverlayElementGeometry[] {
   if (!Array.isArray(elements) || elements.length !== OVERLAY_SLOT_COUNT) {
     return false;
   }
 
-  if (!elements.every(isValidGeometry)) {
+  if (!elements.every((element) => isValidGeometry(element, allowStyle))) {
     return false;
   }
 
@@ -130,6 +143,7 @@ function areElementsValid(elements: unknown): elements is OverlayElementGeometry
 function isCanvasValid(canvas: unknown): boolean {
   return (
     isRecord(canvas) &&
+    hasOnlyKeys(canvas, ['width', 'height']) &&
     canvas.width === OVERLAY_CANVAS_WIDTH &&
     canvas.height === OVERLAY_CANVAS_HEIGHT
   );
@@ -150,7 +164,10 @@ function copyGeometry(element: OverlayElementGeometry): OverlayElementGeometry {
 }
 
 function upgradeV1(value: Record<string, unknown>): OverlayLayout | null {
-  if (!areElementsValid(value.elements)) {
+  if (
+    !hasOnlyKeys(value, ['version', 'canvas', 'elements']) ||
+    !areElementsValid(value.elements, false)
+  ) {
     return null;
   }
 
@@ -166,15 +183,20 @@ function upgradeV1(value: Record<string, unknown>): OverlayLayout | null {
 function upgradeV2(value: Record<string, unknown>): OverlayLayout | null {
   const { style, animations, elements } = value;
 
+  if (!hasOnlyKeys(value, ['version', 'canvas', 'style', 'animations', 'elements'])) {
+    return null;
+  }
+
   if (
     !isValidOverlayStyle(style) ||
     !isRecord(animations) ||
+    !hasOnlyKeys(animations, ['enabled']) ||
     typeof animations.enabled !== 'boolean'
   ) {
     return null;
   }
 
-  if (!areElementsValid(elements)) {
+  if (!areElementsValid(elements, true)) {
     return null;
   }
 
