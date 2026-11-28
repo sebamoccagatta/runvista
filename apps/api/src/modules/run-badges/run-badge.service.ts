@@ -9,6 +9,7 @@ import type { PrismaClient } from '../../generated/prisma/client.js';
 
 export interface RunBadgeView {
   key: string;
+  region: GameBadge['region'];
   name: string;
   leader: string;
   colors: GameBadge['colors'];
@@ -66,6 +67,7 @@ export class RunBadgeService {
 
     const badges = getGameBadges(gameId).map((badge) => ({
       key: badge.key,
+      region: badge.region,
       name: badge.name,
       leader: badge.leader,
       colors: badge.colors,

@@ -19,6 +19,7 @@ const runId = '550e8400-e29b-41d4-a716-446655440000';
 function badge(overrides: Partial<RunBadge> = {}): RunBadge {
   return {
     key: 'kanto-boulder',
+    region: 'kanto',
     name: 'Medalla Roca',
     leader: 'Brock',
     colors: { primary: '#9e8f7a', secondary: '#5d4b3a' },
@@ -102,6 +103,31 @@ describe('RunBadgesPanel', () => {
       'No pudimos guardar la medalla. Intentá nuevamente.',
     );
     expect(button.getAttribute('aria-pressed')).toBe('false');
+  });
+
+  it('does not title the group when the game has a single region', async () => {
+    render(<RunBadgesPanel runId={runId} />);
+
+    await screen.findByRole('button', { name: /Medalla Roca/ });
+
+    expect(screen.queryByRole('heading', { level: 4 })).toBeNull();
+  });
+
+  it('groups the badges by region, in order, when the game has two', async () => {
+    vi.mocked(getRunBadges).mockResolvedValue(
+      configured([
+        badge({ key: 'johto-zephyr', region: 'johto', name: 'Medalla Céfiro', leader: 'Falkner' }),
+        badge({ key: 'kanto-boulder', region: 'kanto', name: 'Medalla Roca', leader: 'Brock' }),
+      ]),
+    );
+
+    render(<RunBadgesPanel runId={runId} />);
+
+    await screen.findByRole('button', { name: /Medalla Céfiro/ });
+
+    const titles = screen.getAllByRole('heading', { level: 4 }).map((item) => item.textContent);
+
+    expect(titles).toEqual(['Johto', 'Kanto']);
   });
 
   it('asks to sign in when the session has expired', async () => {

@@ -79,7 +79,7 @@ model RunConfiguration {
   challengeType ChallengeType @default(NORMAL)
 
   // Aumento porcentual del nivel de los rivales (0-100). Se aplica al tope de
-  // nivel de cada medalla, redondeando hacia arriba.
+  // nivel de cada medalla, redondeado al entero más cercano.
   levelCapIncrease Int @default(0)
 
   createdAt DateTime @default(now())

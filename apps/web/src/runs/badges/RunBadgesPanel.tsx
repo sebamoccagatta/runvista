@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 
+import { BADGE_REGION_NAMES, type BadgeRegion } from '@runvista/pokemon/badges';
 import { Card } from '@runvista/ui';
 
 import { RunApiError } from '../api/runs.api';
@@ -16,6 +17,31 @@ type LoadState = 'loading' | 'ready' | 'guest' | 'error';
 
 function describeBadge(badge: RunBadge): string {
   return `${badge.name}, líder ${badge.leader}, tope Nv. ${badge.levelCap}`;
+}
+
+interface RegionGroup {
+  region: string;
+  label: string;
+  badges: RunBadge[];
+}
+
+/** Agrupa por región conservando el orden en que llegan las medallas. */
+function groupByRegion(badges: readonly RunBadge[]): RegionGroup[] {
+  const groups: RegionGroup[] = [];
+
+  for (const badge of badges) {
+    const last = groups.at(-1);
+
+    if (last?.region === badge.region) {
+      last.badges.push(badge);
+    } else {
+      const label = BADGE_REGION_NAMES[badge.region as BadgeRegion] ?? badge.region;
+
+      groups.push({ region: badge.region, label, badges: [badge] });
+    }
+  }
+
+  return groups;
 }
 
 export function RunBadgesPanel({ runId }: RunBadgesPanelProps) {
@@ -107,6 +133,7 @@ export function RunBadgesPanel({ runId }: RunBadgesPanelProps) {
 
   const badges = state?.configured ? state.badges : [];
   const nextBadge = badges.find((badge) => !badge.obtained);
+  const regionCount = groupByRegion(badges).length;
 
   return (
     <section aria-labelledby="badges-heading">
@@ -172,31 +199,40 @@ export function RunBadgesPanel({ runId }: RunBadgesPanelProps) {
                 : 'Todas las medallas de este juego están marcadas.'}
             </p>
 
-            <ul className="grid grid-cols-4 gap-3 sm:grid-cols-8">
-              {badges.map((badge) => (
-                <li key={badge.key}>
-                  <button
-                    type="button"
-                    aria-pressed={badge.obtained}
-                    aria-label={describeBadge(badge)}
-                    title={describeBadge(badge)}
-                    disabled={pending.has(badge.key)}
-                    onClick={() => void toggle(badge)}
-                    className="flex w-full flex-col items-center gap-2 rounded-xl border border-white/10 bg-surface-raised p-3 transition-colors hover:border-accent/50 focus-visible:outline-2 focus-visible:outline-accent disabled:opacity-60"
-                  >
-                    <BadgeIcon
-                      colors={badge.colors}
-                      obtained={badge.obtained}
-                      className="h-12 w-12"
-                    />
+            {groupByRegion(badges).map((group) => (
+              <div key={group.region} className="space-y-3">
+                {/* Solo hace falta el título cuando el juego tiene más de una región. */}
+                {regionCount > 1 && (
+                  <h4 className="text-sm font-semibold text-text-secondary">{group.label}</h4>
+                )}
 
-                    <span className="text-xs font-semibold tabular-nums text-text-secondary">
-                      Nv. {badge.levelCap}
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
+                <ul className="grid grid-cols-4 gap-3 sm:grid-cols-8">
+                  {group.badges.map((badge) => (
+                    <li key={badge.key}>
+                      <button
+                        type="button"
+                        aria-pressed={badge.obtained}
+                        aria-label={describeBadge(badge)}
+                        title={describeBadge(badge)}
+                        disabled={pending.has(badge.key)}
+                        onClick={() => void toggle(badge)}
+                        className="flex w-full flex-col items-center gap-2 rounded-xl border border-white/10 bg-surface-raised p-3 transition-colors hover:border-accent/50 focus-visible:outline-2 focus-visible:outline-accent disabled:opacity-60"
+                      >
+                        <BadgeIcon
+                          colors={badge.colors}
+                          obtained={badge.obtained}
+                          className="h-12 w-12"
+                        />
+
+                        <span className="text-xs font-semibold tabular-nums text-text-secondary">
+                          Nv. {badge.levelCap}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
           </div>
         )}
 

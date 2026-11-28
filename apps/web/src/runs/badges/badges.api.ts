@@ -2,6 +2,7 @@ import { RunApiError } from '../api/runs.api';
 
 export interface RunBadge {
   key: string;
+  region: string;
   name: string;
   leader: string;
   colors: { primary: string; secondary: string };
@@ -26,6 +27,7 @@ function isBadge(value: unknown): value is RunBadge {
 
   return (
     typeof data.key === 'string' &&
+    typeof data.region === 'string' &&
     typeof data.name === 'string' &&
     typeof data.leader === 'string' &&
     typeof colors?.primary === 'string' &&

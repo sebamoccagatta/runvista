@@ -247,8 +247,8 @@ export function RunConfigurationPanel({ runId }: RunConfigurationPanelProps) {
               />
 
               <p className="mt-2 text-xs text-text-secondary">
-                Sube el tope de nivel de cada medalla. Con 10 %, 14 pasa a 16 (se redondea hacia
-                arriba).
+                Sube el tope de nivel de cada medalla. Con 10 %, 14 pasa a 15 (se redondea al entero
+                más cercano).
               </p>
             </div>
 

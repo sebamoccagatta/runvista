@@ -81,10 +81,10 @@ async function main() {
 
   const caps = Object.fromEntries(withIncrease.badges.map((badge) => [badge.key, badge.levelCap]));
 
-  assert.equal(caps['kanto-boulder'], 16);
+  assert.equal(caps['kanto-boulder'], 15);
   assert.equal(caps['kanto-earth'], 55);
 
-  console.log('✓ Applies the level increase to every level cap, rounding up');
+  console.log('✓ Applies the level increase to every level cap, rounded to the nearest level');
 
   await configuration.save(owner.id, run.id, { gameId: 'red', challengeType: 'NUZLOCKE' });
 
@@ -139,6 +139,36 @@ async function main() {
   assert.deepEqual(foreignRead, { found: false });
 
   console.log('✓ Prevents other users from reading or changing badges');
+
+  await configuration.save(owner.id, run.id, { gameId: 'gold', challengeType: 'NUZLOCKE' });
+
+  const johtoAndKanto = await badges.getBadges(owner.id, run.id);
+
+  if (!johtoAndKanto.found || !johtoAndKanto.configured) {
+    throw new Error('Expected a configured run');
+  }
+
+  assert.equal(johtoAndKanto.badges.length, 16);
+  assert.deepEqual(
+    [...new Set(johtoAndKanto.badges.map((badge) => badge.region))],
+    ['johto', 'kanto'],
+  );
+
+  console.log('✓ A game with two regions lists Johto first and then Kanto');
+
+  await configuration.save(owner.id, run.id, { gameId: 'sun', challengeType: 'NUZLOCKE' });
+
+  const withoutGyms = await badges.getBadges(owner.id, run.id);
+
+  assert.equal(withoutGyms.found && withoutGyms.configured && withoutGyms.badges.length, 0);
+
+  const notAvailable = await badges.setBadge(owner.id, run.id, 'kanto-boulder', true);
+
+  assert.equal(notAvailable.status, 'BADGE_NOT_AVAILABLE');
+
+  console.log('✓ A game without gyms offers no badges and rejects marking one');
+
+  await configuration.save(owner.id, run.id, { gameId: 'red', challengeType: 'NUZLOCKE' });
 
   await badges.setBadge(owner.id, run.id, 'kanto-earth', true);
 
