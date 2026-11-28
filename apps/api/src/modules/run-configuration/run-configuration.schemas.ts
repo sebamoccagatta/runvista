@@ -1,4 +1,5 @@
 import { isPokemonGameId } from '@runvista/pokemon';
+import { MAX_LEVEL_CAP_INCREASE } from '@runvista/pokemon/badges';
 import { z } from 'zod';
 
 export const challengeTypeSchema = z.enum(['NORMAL', 'NUZLOCKE', 'RANDOMLOCKE', 'CUSTOM']);
@@ -12,9 +13,13 @@ export const gameIdSchema = z
     error: 'Unsupported Pokemon game',
   });
 
+export const levelCapIncreaseSchema = z.number().int().min(0).max(MAX_LEVEL_CAP_INCREASE);
+
 export const saveRunConfigurationSchema = z.strictObject({
   gameId: gameIdSchema,
   challengeType: challengeTypeSchema,
+  // Opcional: sin el campo se conserva el aumento actual (o 0 al crear).
+  levelCapIncrease: levelCapIncreaseSchema.optional(),
 });
 
 export const runConfigurationParamsSchema = z.strictObject({

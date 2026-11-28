@@ -10,6 +10,7 @@ const configuration = {
   runId,
   gameId: 'y',
   challengeType: 'RANDOMLOCKE',
+  levelCapIncrease: 10,
   createdAt: '2026-11-22T12:00:00.000Z',
   updatedAt: '2026-11-22T12:00:00.000Z',
 };
@@ -79,6 +80,7 @@ describe('Run configuration API', () => {
     const input = {
       gameId: 'y',
       challengeType: 'RANDOMLOCKE' as const,
+      levelCapIncrease: 10,
     };
 
     const result = await saveRunConfiguration(runId, input);

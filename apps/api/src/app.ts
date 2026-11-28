@@ -10,6 +10,11 @@ import {
 } from './modules/run-configuration/run-configuration.routes.js';
 
 import {
+  createRunBadgeRoutes,
+  type RunBadgeRoutesDependencies,
+} from './modules/run-badges/run-badge.routes.js';
+
+import {
   createRunPokemonRoutes,
   type RunPokemonRoutesDependencies,
 } from './modules/run-pokemon/run-pokemon.routes.js';
@@ -34,6 +39,7 @@ export interface BuildAppOptions {
   auth?: AuthRoutesOptions;
   runs?: RunRoutesDependencies;
   runConfiguration?: RunConfigurationRoutesDependencies;
+  runBadges?: RunBadgeRoutesDependencies;
   runPokemon?: RunPokemonRoutesDependencies;
   pokemonPublication?: RunPokemonPublicationRoutesDependencies;
   runOverlays?: RunOverlayRoutesDependencies;
@@ -82,6 +88,7 @@ export function buildApp(options: BuildAppOptions = {}) {
     if (
       !options.runs &&
       !options.runConfiguration &&
+      !options.runBadges &&
       !options.runPokemon &&
       !options.pokemonPublication &&
       !options.runOverlays &&
@@ -120,6 +127,10 @@ export function buildApp(options: BuildAppOptions = {}) {
 
   if (options.runConfiguration) {
     app.register(createRunConfigurationRoutes(options.runConfiguration));
+  }
+
+  if (options.runBadges) {
+    app.register(createRunBadgeRoutes(options.runBadges));
   }
 
   if (options.runPokemon) {

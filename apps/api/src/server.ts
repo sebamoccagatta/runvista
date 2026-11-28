@@ -17,6 +17,7 @@ import { parseTwitchConfig } from './modules/auth/twitch.config.js';
 
 import { RunService } from './modules/runs/run.service.js';
 import { RunConfigurationService } from './modules/run-configuration/run-configuration.service.js';
+import { RunBadgeService } from './modules/run-badges/run-badge.service.js';
 import { RunPokemonService } from './modules/run-pokemon/run-pokemon.service.js';
 import { RunPokemonPublicationService } from './modules/run-pokemon/run-pokemon-publication.service.js';
 import { RunOverlayService } from './modules/run-overlays/run-overlay.service.js';
@@ -78,6 +79,7 @@ const loginService = new AuthLoginService(twitchAuth, authUsers, sessions);
 
 const runs = new RunService(prisma);
 const runConfiguration = new RunConfigurationService(prisma);
+const runBadges = new RunBadgeService(prisma);
 const runPokemon = new RunPokemonService(prisma);
 const pokemonPublication = new RunPokemonPublicationService(prisma);
 const runOverlays = new RunOverlayService(prisma);
@@ -108,6 +110,11 @@ const app = buildApp({
 
   runConfiguration: {
     service: runConfiguration,
+    resolveActorId,
+  },
+
+  runBadges: {
+    service: runBadges,
     resolveActorId,
   },
 

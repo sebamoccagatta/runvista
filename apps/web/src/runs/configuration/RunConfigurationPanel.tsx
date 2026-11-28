@@ -9,6 +9,7 @@ import { inputStyles, primaryButton, secondaryButton } from '../types';
 import {
   CHALLENGE_LABELS,
   CHALLENGE_TYPES,
+  MAX_LEVEL_CAP_INCREASE,
   getRunConfiguration,
   saveRunConfiguration,
   type ChallengeType,
@@ -21,12 +22,25 @@ interface RunConfigurationPanelProps {
 
 type LoadState = 'loading' | 'ready' | 'guest' | 'error';
 
+/** Devuelve el aumento como entero o `null` si el texto no es válido. */
+function parseLevelCapIncrease(text: string): number | null {
+  if (!/^\d+$/.test(text.trim())) {
+    return null;
+  }
+
+  const value = Number(text.trim());
+
+  return value <= MAX_LEVEL_CAP_INCREASE ? value : null;
+}
+
 export function RunConfigurationPanel({ runId }: RunConfigurationPanelProps) {
   const [loadState, setLoadState] = useState<LoadState>('loading');
   const [configuration, setConfiguration] = useState<RunConfiguration | null>(null);
 
   const [gameId, setGameId] = useState('');
   const [challengeType, setChallengeType] = useState<ChallengeType>('NORMAL');
+  // Texto del campo: se valida al guardar, así el usuario puede escribir libremente.
+  const [levelCapIncrease, setLevelCapIncrease] = useState('0');
 
   const [retryCount, setRetryCount] = useState(0);
   const [saving, setSaving] = useState(false);
@@ -43,6 +57,7 @@ export function RunConfigurationPanel({ runId }: RunConfigurationPanelProps) {
         setConfiguration(result);
         setGameId(result?.gameId ?? '');
         setChallengeType(result?.challengeType ?? 'NORMAL');
+        setLevelCapIncrease(String(result?.levelCapIncrease ?? 0));
         setError(null);
         setSaved(false);
         setLoadState('ready');
@@ -63,7 +78,16 @@ export function RunConfigurationPanel({ runId }: RunConfigurationPanelProps) {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
+    const increase = parseLevelCapIncrease(levelCapIncrease);
+
     if (saving || !gameId) return;
+
+    if (increase === null) {
+      setError(
+        `El aumento de nivel tiene que ser un número entero entre 0 y ${MAX_LEVEL_CAP_INCREASE}.`,
+      );
+      return;
+    }
 
     setSaving(true);
     setError(null);
@@ -73,6 +97,7 @@ export function RunConfigurationPanel({ runId }: RunConfigurationPanelProps) {
       const result = await saveRunConfiguration(runId, {
         gameId,
         challengeType,
+        levelCapIncrease: increase,
       });
 
       setConfiguration(result);
@@ -198,6 +223,33 @@ export function RunConfigurationPanel({ runId }: RunConfigurationPanelProps) {
                   </option>
                 ))}
               </select>
+            </div>
+
+            <div>
+              <label htmlFor="run-level-increase" className="mb-2 block text-sm font-semibold">
+                Aumento del nivel de los rivales (%)
+              </label>
+
+              <input
+                id="run-level-increase"
+                type="number"
+                inputMode="numeric"
+                min={0}
+                max={MAX_LEVEL_CAP_INCREASE}
+                step={1}
+                className={inputStyles}
+                value={levelCapIncrease}
+                disabled={saving}
+                onChange={(event) => {
+                  setLevelCapIncrease(event.target.value);
+                  setSaved(false);
+                }}
+              />
+
+              <p className="mt-2 text-xs text-text-secondary">
+                Sube el tope de nivel de cada medalla. Con 10 %, 14 pasa a 16 (se redondea hacia
+                arriba).
+              </p>
             </div>
 
             {configuration === null && (

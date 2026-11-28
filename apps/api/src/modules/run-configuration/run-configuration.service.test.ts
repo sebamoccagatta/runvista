@@ -139,6 +139,7 @@ describe('RunConfigurationService', () => {
           runId,
           gameId: 'y',
           challengeType: 'RANDOMLOCKE',
+          levelCapIncrease: 0,
         },
         update: {
           gameId: 'y',

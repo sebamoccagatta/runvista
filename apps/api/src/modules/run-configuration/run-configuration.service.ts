@@ -55,6 +55,8 @@ export class RunConfigurationService {
         return null;
       }
 
+      const levelCapIncrease = data.levelCapIncrease;
+
       return tx.runConfiguration.upsert({
         where: {
           runId,
@@ -63,10 +65,12 @@ export class RunConfigurationService {
           runId,
           gameId: data.gameId,
           challengeType: data.challengeType,
+          levelCapIncrease: levelCapIncrease ?? 0,
         },
         update: {
           gameId: data.gameId,
           challengeType: data.challengeType,
+          ...(levelCapIncrease !== undefined ? { levelCapIncrease } : {}),
         },
       });
     });

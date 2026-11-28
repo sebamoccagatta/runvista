@@ -21,6 +21,10 @@
     "./pokeballs": {
       "types": "./dist/pokeballs.d.ts",
       "import": "./dist/pokeballs.js"
+    },
+    "./badges": {
+      "types": "./dist/badges.d.ts",
+      "import": "./dist/badges.js"
     }
   },
   "files": [

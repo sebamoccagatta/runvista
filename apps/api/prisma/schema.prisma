@@ -61,6 +61,7 @@ model Run {
   pokemon       RunPokemon[]
   overlays      RunOverlay[]
   publishedTeam RunPublishedTeam?
+  badges        RunBadge[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -76,6 +77,10 @@ model RunConfiguration {
 
   gameId        String        @db.VarChar(80)
   challengeType ChallengeType @default(NORMAL)
+
+  // Aumento porcentual del nivel de los rivales (0-100). Se aplica al tope de
+  // nivel de cada medalla, redondeando hacia arriba.
+  levelCapIncrease Int @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -104,6 +109,21 @@ model RunPokemon {
 
   @@unique([runId, teamSlot])
   @@index([runId, status])
+}
+
+// Medalla obtenida en un run. La lista de medallas de cada juego vive en
+// @runvista/pokemon/badges; aquí solo se guardan las conseguidas.
+model RunBadge {
+  id String @id @default(uuid()) @db.Uuid
+
+  runId String @db.Uuid
+  run   Run    @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  badgeKey   String   @db.VarChar(40)
+  obtainedAt DateTime @default(now())
+
+  @@unique([runId, badgeKey])
+  @@index([runId])
 }
 
 model RunParticipant {
