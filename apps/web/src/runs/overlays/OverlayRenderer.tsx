@@ -1,11 +1,14 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { getPokemonSpecies } from '@runvista/pokemon/species';
 import { getPokemonVariety } from '@runvista/pokemon/varieties';
 
 import {
   FONT_FAMILY_STACKS,
+  diffTeamSnapshots,
   getDetailFontSize,
+  getTeamMemberFingerprint,
+  getTeamSlotMembers,
   hexToRgba,
   resolveElementStyle,
 } from '@runvista/overlay-engine';
@@ -15,6 +18,7 @@ import { getPokemonSpriteUrls } from '../pokemon/pokemon-sprites';
 import { PokeBallArt } from './PokeBallArt';
 
 import type { OverlayLayout } from './overlay.api';
+import './overlay-animations.css';
 
 export interface OverlayTeamPokemon {
   speciesId: number;
@@ -32,6 +36,122 @@ export interface OverlayTeamPokemon {
 interface OverlayRendererProps {
   layout: OverlayLayout;
   pokemon: OverlayTeamPokemon[];
+}
+
+// Duración de la salida de un Pokémon del equipo; el espacio se vacía después.
+const LEAVE_DURATION_MS = 400;
+
+interface SlotMotion {
+  kind: 'captured' | 'replaced';
+  // Cambia en cada animación: fuerza a React a reiniciar la clase CSS.
+  token: number;
+}
+
+interface TeamMotion {
+  slots: ReadonlyMap<number, SlotMotion>;
+  // Miembros que salieron y se siguen dibujando mientras se desvanecen.
+  departing: ReadonlyMap<number, OverlayTeamPokemon>;
+}
+
+interface TeamSnapshot {
+  fingerprints: ReadonlyMap<number, string>;
+  members: ReadonlyMap<number, OverlayTeamPokemon>;
+}
+
+const NO_MOTION: TeamMotion = { slots: new Map(), departing: new Map() };
+
+/**
+ * Compara cada snapshot con el anterior y devuelve qué espacios animar.
+ * El primer snapshot no anima: es la carga inicial del overlay.
+ */
+function useTeamMotion(pokemon: OverlayTeamPokemon[], enabled: boolean): TeamMotion {
+  const [motion, setMotion] = useState<TeamMotion>(NO_MOTION);
+  const snapshotRef = useRef<TeamSnapshot | null>(null);
+  const tokenRef = useRef(0);
+  const timersRef = useRef<number[]>([]);
+
+  useEffect(() => {
+    const members = getTeamSlotMembers(pokemon);
+    const fingerprints = new Map(
+      [...members].map(([slot, item]) => [slot, getTeamMemberFingerprint(item)]),
+    );
+
+    const previous = snapshotRef.current;
+    snapshotRef.current = { fingerprints, members };
+
+    if (!previous || !enabled) {
+      return;
+    }
+
+    const changes = diffTeamSnapshots(previous.fingerprints, fingerprints);
+
+    if (
+      changes.captured.length === 0 &&
+      changes.replaced.length === 0 &&
+      changes.removed.length === 0
+    ) {
+      return;
+    }
+
+    tokenRef.current += 1;
+    const token = tokenRef.current;
+
+    setMotion((current) => {
+      const slots = new Map(current.slots);
+      const departing = new Map(current.departing);
+
+      for (const slot of changes.captured) {
+        slots.set(slot, { kind: 'captured', token });
+        departing.delete(slot);
+      }
+
+      for (const slot of changes.replaced) {
+        slots.set(slot, { kind: 'replaced', token });
+        departing.delete(slot);
+      }
+
+      for (const slot of changes.removed) {
+        const gone = previous.members.get(slot);
+
+        slots.delete(slot);
+
+        if (gone) {
+          departing.set(slot, gone);
+        }
+      }
+
+      return { slots, departing };
+    });
+
+    for (const slot of changes.removed) {
+      const timer = window.setTimeout(() => {
+        setMotion((current) => {
+          if (!current.departing.has(slot)) {
+            return current;
+          }
+
+          const departing = new Map(current.departing);
+          departing.delete(slot);
+
+          return { slots: current.slots, departing };
+        });
+      }, LEAVE_DURATION_MS);
+
+      timersRef.current.push(timer);
+    }
+  }, [pokemon, enabled]);
+
+  useEffect(() => {
+    const timers = timersRef.current;
+
+    return () => {
+      for (const timer of timers) {
+        window.clearTimeout(timer);
+      }
+    };
+  }, []);
+
+  return motion;
 }
 
 function getFormName(pokemon: OverlayTeamPokemon): string {
@@ -72,9 +192,9 @@ function OverlayPokemonImage({ pokemon }: { pokemon: OverlayTeamPokemon }) {
 }
 
 export function OverlayRenderer({ layout, pokemon }: OverlayRendererProps) {
-  const team = pokemon.filter(
-    (item) => item.teamSlot !== null && (item.status === undefined || item.status === 'TEAM'),
-  );
+  const animated = layout.animations.enabled;
+  const motion = useTeamMotion(pokemon, animated);
+  const team = getTeamSlotMembers(pokemon);
 
   return (
     <div
@@ -91,11 +211,18 @@ export function OverlayRenderer({ layout, pokemon }: OverlayRendererProps) {
           return null;
         }
 
-        const member = team.find((item) => item.teamSlot === element.slot);
+        const current = team.get(element.slot);
+        const leaving = current === undefined;
+        const member = current ?? motion.departing.get(element.slot);
 
         if (!member) {
           return null;
         }
+
+        const slotMotion = leaving ? undefined : motion.slots.get(element.slot);
+        const captured = slotMotion?.kind === 'captured';
+        const replaced = slotMotion?.kind === 'replaced';
+        const motionKey = slotMotion ? String(slotMotion.token) : 'still';
 
         const formName = getFormName(member);
         const displayName = member.nickname || formName;
@@ -120,7 +247,9 @@ export function OverlayRenderer({ layout, pokemon }: OverlayRendererProps) {
         return (
           <div
             key={element.slot}
-            className="absolute flex flex-col items-center justify-center overflow-hidden"
+            className={`absolute flex flex-col items-center justify-center overflow-hidden ${
+              leaving ? 'runvista-leave' : ''
+            }`}
             style={{
               left: element.x,
               top: element.y,
@@ -137,23 +266,39 @@ export function OverlayRenderer({ layout, pokemon }: OverlayRendererProps) {
               {ball && (
                 // Va antes en el DOM y el sprite tiene `relative`, así que el sprite se
                 // pinta encima. El tamaño y la opacidad salen del estilo del espacio.
-                <PokeBallArt
-                  ball={ball}
-                  className="absolute bottom-0 aspect-square"
-                  style={{
-                    left: '50%',
-                    height: `${style.ball.scale * 100}%`,
-                    opacity: style.ball.opacity,
-                    transform: `translate(-50%, ${ballShift}%)`,
-                  }}
-                />
+                // La animación de captura va en el contenedor para no pisar el `transform`
+                // que centra la ball.
+                <div
+                  key={`ball-${motionKey}`}
+                  className={`absolute inset-0 ${captured ? 'runvista-capture-ball' : ''}`}
+                >
+                  <PokeBallArt
+                    ball={ball}
+                    className="absolute bottom-0 aspect-square"
+                    style={{
+                      left: '50%',
+                      height: `${style.ball.scale * 100}%`,
+                      opacity: style.ball.opacity,
+                      transform: `translate(-50%, ${ballShift}%)`,
+                    }}
+                  />
+                </div>
               )}
 
-              <div className="relative h-full w-full">
-                <OverlayPokemonImage
-                  key={`${member.id ?? element.slot}-${member.pokemonId ?? 'default'}-${member.isShiny}`}
-                  pokemon={member}
-                />
+              <div
+                key={`sprite-${motionKey}`}
+                className={`relative h-full w-full ${
+                  captured ? 'runvista-capture-pokemon' : replaced ? 'runvista-enter' : ''
+                }`}
+              >
+                <div
+                  className={animated && !leaving ? 'runvista-idle h-full w-full' : 'h-full w-full'}
+                >
+                  <OverlayPokemonImage
+                    key={`${member.id ?? element.slot}-${member.pokemonId ?? 'default'}-${member.isShiny}`}
+                    pokemon={member}
+                  />
+                </div>
               </div>
             </div>
 

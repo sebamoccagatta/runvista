@@ -1,0 +1,111 @@
+/*
+ * Animaciones del overlay del equipo. Solo las usa OverlayRenderer, que decide
+ * cuándo aplicar cada clase según el snapshot y `animations.enabled`.
+ */
+
+/* Movimiento continuo: flota y respira suavemente mientras está en el equipo. */
+@keyframes runvista-idle {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-6px) scale(1.02);
+  }
+}
+
+/* Ball: sacude y destella, y vuelve a su estado normal detrás del Pokémon. */
+@keyframes runvista-capture-ball {
+  0% {
+    transform: rotate(0deg);
+    opacity: 1;
+    filter: brightness(1);
+  }
+  12% {
+    transform: rotate(-12deg);
+  }
+  24% {
+    transform: rotate(12deg);
+  }
+  36% {
+    transform: rotate(-12deg);
+  }
+  48% {
+    transform: rotate(12deg);
+  }
+  60% {
+    transform: rotate(0deg) scale(1.1);
+    filter: brightness(2.4);
+  }
+  /* Termina en el estado de reposo: la ball se queda detrás del Pokémon. */
+  100% {
+    transform: none;
+    opacity: 1;
+    filter: none;
+  }
+}
+
+/* El Pokémon aparece cuando la ball ya destelló y sale con un pequeño rebote. */
+@keyframes runvista-capture-pokemon {
+  0%,
+  60% {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+  75% {
+    opacity: 1;
+    transform: scale(1.12);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Reemplazo en el mismo espacio: fundido corto, sin captura. */
+@keyframes runvista-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Salida del equipo: el espacio se desvanece antes de quedar vacío. */
+@keyframes runvista-leave {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+}
+
+.runvista-idle {
+  transform-origin: 50% 100%;
+  animation: runvista-idle 3200ms ease-in-out infinite;
+}
+
+.runvista-capture-ball {
+  transform-origin: 50% 100%;
+  animation: runvista-capture-ball 1200ms ease-in-out both;
+}
+
+.runvista-capture-pokemon {
+  transform-origin: 50% 100%;
+  animation: runvista-capture-pokemon 1200ms ease-out both;
+}
+
+.runvista-enter {
+  transform-origin: 50% 100%;
+  animation: runvista-enter 400ms ease-out both;
+}
+
+.runvista-leave {
+  animation: runvista-leave 400ms ease-in both;
+}
