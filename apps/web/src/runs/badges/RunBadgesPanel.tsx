@@ -6,8 +6,11 @@ import { Card } from '@runvista/ui';
 import { RunApiError } from '../api/runs.api';
 import { secondaryButton } from '../types';
 
+import { listRunPokemon } from '../pokemon/pokemon.api';
+
 import { getRunBadges, setRunBadge, type RunBadge, type RunBadgesState } from './badges.api';
 import { BadgeIcon } from './BadgeIcon';
+import { getHighestTeamLevel, isTeamOverCap } from './team-level';
 
 interface RunBadgesPanelProps {
   runId: string;
@@ -48,6 +51,8 @@ export function RunBadgesPanel({ runId }: RunBadgesPanelProps) {
   const [loadState, setLoadState] = useState<LoadState>('loading');
   const [state, setState] = useState<RunBadgesState | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  // Nivel más alto del equipo. Si no se puede cargar, no hay advertencia.
+  const [highestTeamLevel, setHighestTeamLevel] = useState<number | null>(null);
   const [pending, setPending] = useState<ReadonlySet<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
 
@@ -66,6 +71,24 @@ export function RunBadgesPanel({ runId }: RunBadgesPanelProps) {
         if (controller.signal.aborted) return;
 
         setLoadState(cause instanceof RunApiError && cause.status === 401 ? 'guest' : 'error');
+      });
+
+    return () => controller.abort();
+  }, [runId, retryCount]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    listRunPokemon(runId, controller.signal)
+      .then((team) => {
+        if (!controller.signal.aborted) {
+          setHighestTeamLevel(getHighestTeamLevel(team));
+        }
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) {
+          setHighestTeamLevel(null);
+        }
       });
 
     return () => controller.abort();
@@ -198,6 +221,13 @@ export function RunBadgesPanel({ runId }: RunBadgesPanelProps) {
                 ? `Próximo tope: Nv. ${nextBadge.levelCap} (líder ${nextBadge.leader}).`
                 : 'Todas las medallas de este juego están marcadas.'}
             </p>
+
+            {nextBadge && isTeamOverCap(highestTeamLevel, nextBadge.levelCap) && (
+              <p role="status" className="text-sm font-semibold text-amber-300">
+                Tu equipo llega al Nv. {highestTeamLevel}, por encima del tope de {nextBadge.leader}{' '}
+                (Nv. {nextBadge.levelCap}).
+              </p>
+            )}
 
             {groupByRegion(badges).map((group) => (
               <div key={group.region} className="space-y-3">

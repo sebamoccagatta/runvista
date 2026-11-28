@@ -6,6 +6,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { RunApiError } from '../api/runs.api';
+import { listRunPokemon } from '../pokemon/pokemon.api';
 import { getRunBadges, setRunBadge, type RunBadge, type RunBadgesState } from './badges.api';
 import { RunBadgesPanel } from './RunBadgesPanel';
 
@@ -13,6 +14,19 @@ vi.mock('./badges.api', () => ({
   getRunBadges: vi.fn(),
   setRunBadge: vi.fn(),
 }));
+
+vi.mock('../pokemon/pokemon.api', () => ({
+  listRunPokemon: vi.fn(),
+}));
+
+function teamWithLevels(...levels: number[]) {
+  return levels.map((level, index) => ({
+    id: `pokemon-${index}`,
+    status: 'TEAM',
+    level,
+    teamSlot: index + 1,
+  }));
+}
 
 const runId = '550e8400-e29b-41d4-a716-446655440000';
 
@@ -37,6 +51,7 @@ function configured(badges: RunBadge[]): RunBadgesState {
 beforeEach(() => {
   vi.mocked(getRunBadges).mockResolvedValue(configured([badge()]));
   vi.mocked(setRunBadge).mockResolvedValue({ obtainedAt: '2026-11-28T12:00:00.000Z' });
+  vi.mocked(listRunPokemon).mockResolvedValue([] as never);
 });
 
 afterEach(() => {
@@ -128,6 +143,48 @@ describe('RunBadgesPanel', () => {
     const titles = screen.getAllByRole('heading', { level: 4 }).map((item) => item.textContent);
 
     expect(titles).toEqual(['Johto', 'Kanto']);
+  });
+
+  it('warns when the team is above the next level cap', async () => {
+    vi.mocked(listRunPokemon).mockResolvedValue(teamWithLevels(12, 20) as never);
+
+    render(<RunBadgesPanel runId={runId} />);
+
+    expect(
+      await screen.findByText(/Tu equipo llega al Nv. 20, por encima del tope de Brock/),
+    ).toBeTruthy();
+  });
+
+  it('does not warn when the team stays within the cap', async () => {
+    vi.mocked(listRunPokemon).mockResolvedValue(teamWithLevels(12, 16) as never);
+
+    render(<RunBadgesPanel runId={runId} />);
+
+    await screen.findByRole('button', { name: /Medalla Roca/ });
+
+    expect(screen.queryByText(/por encima del tope/)).toBeNull();
+  });
+
+  it('does not warn when every badge is already marked', async () => {
+    vi.mocked(getRunBadges).mockResolvedValue(
+      configured([badge({ obtained: true, obtainedAt: '2026-11-28T12:00:00.000Z' })]),
+    );
+    vi.mocked(listRunPokemon).mockResolvedValue(teamWithLevels(40) as never);
+
+    render(<RunBadgesPanel runId={runId} />);
+
+    await screen.findByRole('button', { name: /Medalla Roca/ });
+
+    expect(screen.queryByText(/por encima del tope/)).toBeNull();
+  });
+
+  it('keeps the badges when the team cannot be loaded', async () => {
+    vi.mocked(listRunPokemon).mockRejectedValue(new RunApiError('Server error', 500));
+
+    render(<RunBadgesPanel runId={runId} />);
+
+    expect(await screen.findByRole('button', { name: /Medalla Roca/ })).toBeTruthy();
+    expect(screen.queryByText(/por encima del tope/)).toBeNull();
   });
 
   it('asks to sign in when the session has expired', async () => {
