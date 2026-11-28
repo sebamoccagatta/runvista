@@ -5,11 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "pnpm --filter @runvista/pokemon build && tsc -b && vite build",
+    "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@runvista/overlay-engine": "workspace:*",
     "@runvista/pokemon": "workspace:*",
     "@runvista/ui": "workspace:*",
     "react": "^19.3.1",

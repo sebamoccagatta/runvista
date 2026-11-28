@@ -1,5 +1,7 @@
 import { useRef, useState, type PointerEvent } from 'react';
 
+import { FONT_FAMILY_STACKS, hexToRgba, resolveElementStyle } from '@runvista/overlay-engine';
+import { getPokeBall } from '@runvista/pokemon/pokeballs';
 import { getPokemonSpecies } from '@runvista/pokemon/species';
 import { getPokemonVariety } from '@runvista/pokemon/varieties';
 
@@ -7,6 +9,7 @@ import { getPokemonSpriteUrls } from '../pokemon/pokemon-sprites';
 import type { RunPokemon } from '../pokemon/pokemon.api';
 
 import type { OverlayElement, OverlayLayout } from './overlay.api';
+import { PokeBallArt } from './PokeBallArt';
 
 interface OverlayCanvasProps {
   layout: OverlayLayout;
@@ -186,6 +189,8 @@ export function OverlayCanvas({
             backgroundImage:
               'linear-gradient(#ffffff0a 1px, transparent 1px), linear-gradient(90deg, #ffffff0a 1px, transparent 1px)',
             backgroundSize: '5% 8.8889%',
+            // Permite expresar tamaños del overlay en `cqw`: escalan con el lienzo.
+            containerType: 'inline-size',
           }}
         >
           {layout.elements.map((element) => {
@@ -195,6 +200,14 @@ export function OverlayCanvas({
 
             const formName = member ? getFormName(member) : null;
             const displayName = member?.nickname || formName;
+
+            const style = resolveElementStyle(layout, element);
+            const ball = member?.pokeBall ? getPokeBall(member.pokeBall) : undefined;
+            const ballShift =
+              style.ball.scale > 1 ? ((style.ball.scale - 1) / style.ball.scale) * 100 : 0;
+
+            // Un píxel del overlay (1920 de ancho) expresado en el ancho del lienzo.
+            const cq = (pixels: number) => `${(pixels / layout.canvas.width) * 100}cqw`;
 
             return (
               <div
@@ -215,21 +228,68 @@ export function OverlayCanvas({
                 aria-label={`Posición ${element.slot}`}
               >
                 <div
-                  className={`relative flex h-full w-full flex-col items-center justify-center overflow-hidden rounded-sm ${
-                    element.visible ? 'bg-cyan-400/10' : 'bg-white/5 opacity-45'
-                  }`}
+                  className={`relative flex h-full w-full flex-col items-center justify-center overflow-hidden ${
+                    element.visible
+                      ? style.card.backgroundOpacity === 0
+                        ? 'bg-cyan-400/10'
+                        : ''
+                      : 'bg-white/5 opacity-45'
+                  } ${style.card.radius === 0 ? 'rounded-sm' : ''}`}
+                  style={{
+                    ...(element.visible && style.card.backgroundOpacity > 0
+                      ? {
+                          backgroundColor: hexToRgba(
+                            style.card.background,
+                            style.card.backgroundOpacity,
+                          ),
+                        }
+                      : {}),
+                    ...(style.card.radius > 0 ? { borderRadius: cq(style.card.radius) } : {}),
+                    ...(style.card.borderWidth > 0
+                      ? {
+                          border: `${cq(style.card.borderWidth)} solid ${style.card.borderColor}`,
+                        }
+                      : {}),
+                  }}
                 >
                   {member && element.visible ? (
                     <>
-                      <div className="min-h-0 w-full flex-1">
-                        <PokemonArtwork
-                          key={`${member.id}-${member.pokemonId ?? 'default'}-${member.isShiny}`}
-                          pokemon={member}
-                        />
+                      <div className="relative min-h-0 w-full flex-1">
+                        {ball && (
+                          <PokeBallArt
+                            ball={ball}
+                            className="pointer-events-none absolute bottom-0 aspect-square"
+                            style={{
+                              left: '50%',
+                              height: `${style.ball.scale * 100}%`,
+                              opacity: style.ball.opacity,
+                              transform: `translate(-50%, ${ballShift}%)`,
+                            }}
+                          />
+                        )}
+
+                        <div className="relative h-full w-full">
+                          <PokemonArtwork
+                            key={`${member.id}-${member.pokemonId ?? 'default'}-${member.isShiny}`}
+                            pokemon={member}
+                          />
+                        </div>
                       </div>
 
                       {(element.showNickname || element.showSpecies || element.showLevel) && (
-                        <div className="w-full truncate bg-black/65 px-1 text-center text-[8px] leading-tight text-white sm:text-[10px]">
+                        <div
+                          className="relative w-full truncate px-1 text-center leading-tight"
+                          style={{
+                            backgroundColor: hexToRgba(
+                              style.label.background,
+                              style.label.backgroundOpacity,
+                            ),
+                            color: style.label.color,
+                            fontSize: cq(style.label.fontSize),
+                            fontFamily: FONT_FAMILY_STACKS[style.label.fontFamily],
+                            textShadow: style.label.shadow ? '0 1px 2px rgba(0,0,0,0.8)' : 'none',
+                          }}
+                        >
                           {element.showNickname && displayName && <span>{displayName} </span>}
                           {element.showSpecies && formName && <span>{formName} </span>}
                           {element.showLevel && member.level !== null && (

@@ -66,11 +66,11 @@ describe('OverlayRenderer Poke Ball', () => {
       />,
     );
 
-    const className = container.querySelector('svg[data-poke-ball]')?.getAttribute('class') ?? '';
+    const ball = container.querySelector<SVGElement>('svg[data-poke-ball]');
 
-    expect(className).toContain('h-[115%]');
-    expect(className).toContain('bottom-0');
-    expect(className).toContain('opacity-85');
+    expect(ball?.getAttribute('class')).toContain('bottom-0');
+    expect(ball?.style.height).toBe('115%');
+    expect(ball?.style.opacity).toBe('0.85');
   });
 
   it('draws every catalog ball without errors', () => {

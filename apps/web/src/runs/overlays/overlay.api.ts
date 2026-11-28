@@ -1,25 +1,15 @@
+import {
+  createDefaultOverlayLayout,
+  upgradeLayout,
+  type OverlayElement,
+  type OverlayLayout,
+} from '@runvista/overlay-engine';
+
 import { RunApiError } from '../api/runs.api';
 
-export interface OverlayElement {
-  slot: number;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  visible: boolean;
-  showNickname: boolean;
-  showSpecies: boolean;
-  showLevel: boolean;
-}
+export { createDefaultOverlayLayout };
 
-export interface OverlayLayout {
-  version: 1;
-  canvas: {
-    width: 1920;
-    height: 1080;
-  };
-  elements: OverlayElement[];
-}
+export type { OverlayElement, OverlayLayout };
 
 export interface RunOverlay {
   id: string;
@@ -30,94 +20,17 @@ export interface RunOverlay {
   updatedAt: string;
 }
 
-export function createDefaultOverlayLayout(): OverlayLayout {
-  return {
-    version: 1,
-    canvas: {
-      width: 1920,
-      height: 1080,
-    },
-    elements: Array.from({ length: 6 }, (_, index) => ({
-      slot: index + 1,
-      x: 120 + index * 280,
-      y: 820,
-      width: 220,
-      height: 190,
-      visible: true,
-      showNickname: true,
-      showSpecies: false,
-      showLevel: true,
-    })),
-  };
-}
-
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+/**
+ * La API siempre responde layouts versión 2, así que el cliente solo acepta esa
+ * versión. Las reglas de geometría y estilo vienen del paquete compartido, las
+ * mismas que valida el servidor.
+ */
 export function isOverlayLayout(value: unknown): value is OverlayLayout {
-  if (!isRecord(value) || value.version !== 1 || !isRecord(value.canvas)) {
-    return false;
-  }
-
-  if (value.canvas.width !== 1920 || value.canvas.height !== 1080) {
-    return false;
-  }
-
-  if (!Array.isArray(value.elements) || value.elements.length !== 6) {
-    return false;
-  }
-
-  const slots = new Set<number>();
-
-  for (const element of value.elements) {
-    if (!isRecord(element)) {
-      return false;
-    }
-
-    const { slot, x, y, width, height } = element;
-
-    if (
-      !Number.isInteger(slot) ||
-      typeof slot !== 'number' ||
-      slot < 1 ||
-      slot > 6 ||
-      slots.has(slot)
-    ) {
-      return false;
-    }
-
-    slots.add(slot);
-
-    if (
-      typeof x !== 'number' ||
-      typeof y !== 'number' ||
-      typeof width !== 'number' ||
-      typeof height !== 'number' ||
-      ![x, y, width, height].every(Number.isInteger) ||
-      x < 0 ||
-      y < 0 ||
-      width < 80 ||
-      width > 600 ||
-      height < 80 ||
-      height > 600 ||
-      x + width > 1920 ||
-      y + height > 1080
-    ) {
-      return false;
-    }
-
-    if (
-      typeof element.visible !== 'boolean' ||
-      typeof element.showNickname !== 'boolean' ||
-      typeof element.showSpecies !== 'boolean' ||
-      typeof element.showLevel !== 'boolean'
-    ) {
-      return false;
-    }
-  }
-
-  return slots.size === 6;
+  return isRecord(value) && value.version === 2 && upgradeLayout(value) !== null;
 }
 
 function isRunOverlay(value: unknown, runId: string): value is RunOverlay {

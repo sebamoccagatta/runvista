@@ -35,8 +35,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build shared Pokemon package
-        run: pnpm --filter @runvista/pokemon build
+      - name: Build shared packages
+        run: pnpm run build:packages
 
       - name: Check formatting
         run: pnpm run format:check
