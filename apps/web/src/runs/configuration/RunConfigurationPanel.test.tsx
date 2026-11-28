@@ -28,6 +28,7 @@ const configuration = {
   runId,
   gameId: 'y',
   challengeType: 'RANDOMLOCKE' as const,
+  levelCapIncrease: 0,
   createdAt: '2026-11-22T12:00:00.000Z',
   updatedAt: '2026-11-22T12:00:00.000Z',
 };
@@ -96,6 +97,7 @@ describe('RunConfigurationPanel', () => {
       ...configuration,
       gameId: 'emerald',
       challengeType: 'NUZLOCKE' as const,
+      levelCapIncrease: 0,
     };
 
     vi.mocked(saveRunConfiguration).mockResolvedValue(updated);
@@ -122,10 +124,41 @@ describe('RunConfigurationPanel', () => {
       expect(saveRunConfiguration).toHaveBeenCalledWith(runId, {
         gameId: 'emerald',
         challengeType: 'NUZLOCKE',
+        levelCapIncrease: 0,
       });
     });
 
     expect(await screen.findByText('Configuración guardada correctamente.')).toBeDefined();
+  });
+
+  it('saves a level increase typed by the user', async () => {
+    renderPanel();
+
+    const increase = await screen.findByLabelText('Aumento del nivel de los rivales (%)');
+
+    fireEvent.change(increase, { target: { value: '10' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar configuración' }));
+
+    await waitFor(() => {
+      expect(saveRunConfiguration).toHaveBeenCalledWith(
+        runId,
+        expect.objectContaining({ levelCapIncrease: 10 }),
+      );
+    });
+  });
+
+  it('does not save an increase outside the allowed range', async () => {
+    renderPanel();
+
+    const increase = await screen.findByLabelText('Aumento del nivel de los rivales (%)');
+
+    fireEvent.change(increase, { target: { value: '150' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar configuración' }));
+
+    // El máximo del campo deja que el navegador bloquee el envío antes de llegar a la API.
+    await waitFor(() => {
+      expect(saveRunConfiguration).not.toHaveBeenCalled();
+    });
   });
 
   it('allows editing an existing configuration', async () => {
@@ -147,6 +180,7 @@ describe('RunConfigurationPanel', () => {
       expect(saveRunConfiguration).toHaveBeenCalledWith(runId, {
         gameId: 'omega-ruby',
         challengeType: 'RANDOMLOCKE',
+        levelCapIncrease: 0,
       });
     });
   });

@@ -104,7 +104,7 @@ describe('RunDetailsPage', () => {
       name: 'Pokémon Y',
     });
 
-    for (const title of ['Configuración', 'Capturas', 'Progreso']) {
+    for (const title of ['Configuración', 'Medallas', 'Capturas']) {
       expect(
         screen.getByRole('heading', {
           name: title,
@@ -112,7 +112,7 @@ describe('RunDetailsPage', () => {
       ).toBeDefined();
     }
 
-    expect(screen.getAllByText('Próximamente')).toHaveLength(2);
+    expect(screen.getAllByText('Próximamente')).toHaveLength(1);
   });
 
   it('renders the Pokemon panel for the selected run', async () => {

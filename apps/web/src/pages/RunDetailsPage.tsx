@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router';
 import { Badge, Card } from '@runvista/ui';
 
 import { getRun, RunApiError } from '../runs/api/runs.api';
+import { RunBadgesPanel } from '../runs/badges/RunBadgesPanel';
 import { RunConfigurationPanel } from '../runs/configuration/RunConfigurationPanel';
 import { RunPokemonPanel } from '../runs/pokemon/RunPokemonPanel';
 
@@ -28,11 +29,6 @@ const plannedSections = [
     title: 'Capturas',
     description: 'Registro de encuentros y Pokémon obtenidos.',
     symbol: '◎',
-  },
-  {
-    title: 'Progreso',
-    description: 'Medallas, líderes y momentos importantes de la aventura.',
-    symbol: '◇',
   },
 ] as const;
 
@@ -255,6 +251,8 @@ export function RunDetailsPage() {
 
             <div className="grid items-start gap-5 sm:grid-cols-2">
               <RunConfigurationPanel key={detail.run.id} runId={detail.run.id} />
+
+              <RunBadgesPanel key={`badges-${detail.run.id}`} runId={detail.run.id} />
 
               <Link
                 to={`/app/runs/${detail.run.id}/overlays`}

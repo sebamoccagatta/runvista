@@ -13,10 +13,14 @@ export const CHALLENGE_LABELS: Record<ChallengeType, string> = {
   CUSTOM: 'Personalizado',
 };
 
+export const MAX_LEVEL_CAP_INCREASE = 100;
+
 export interface RunConfiguration {
   runId: string;
   gameId: string;
   challengeType: ChallengeType;
+  /** Aumento porcentual del nivel de los rivales; se aplica a los topes de medalla. */
+  levelCapIncrease: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -24,6 +28,7 @@ export interface RunConfiguration {
 export interface SaveRunConfigurationInput {
   gameId: string;
   challengeType: ChallengeType;
+  levelCapIncrease?: number;
 }
 
 function isChallengeType(value: unknown): value is ChallengeType {
@@ -42,6 +47,9 @@ function isConfiguration(value: unknown): value is RunConfiguration {
     typeof data.gameId === 'string' &&
     isPokemonGameId(data.gameId) &&
     isChallengeType(data.challengeType) &&
+    Number.isInteger(data.levelCapIncrease) &&
+    (data.levelCapIncrease as number) >= 0 &&
+    (data.levelCapIncrease as number) <= MAX_LEVEL_CAP_INCREASE &&
     typeof data.createdAt === 'string' &&
     typeof data.updatedAt === 'string'
   );
