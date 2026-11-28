@@ -99,6 +99,25 @@ describe('RunPokemonPanel editing', () => {
     ).toBeDefined();
   });
 
+  it('reports the list when it loads and again after every change', async () => {
+    const onPokemonChange = vi.fn();
+
+    render(<RunPokemonPanel runId={runId} onPokemonChange={onPokemonChange} />);
+
+    await waitFor(() => {
+      expect(onPokemonChange).toHaveBeenLastCalledWith([pikachu]);
+    });
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Editar Pica' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Simular guardado' }));
+
+    await waitFor(() => {
+      expect(onPokemonChange).toHaveBeenLastCalledWith([
+        expect.objectContaining({ id: pikachu.id, nickname: 'Nuevo apodo' }),
+      ]);
+    });
+  });
+
   it('closes the modal when cancelling', async () => {
     render(<RunPokemonPanel runId={runId} />);
 

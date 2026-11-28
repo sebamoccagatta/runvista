@@ -131,6 +131,32 @@ describe('RunConfigurationPanel', () => {
     expect(await screen.findByText('Configuración guardada correctamente.')).toBeDefined();
   });
 
+  it('reports the saved configuration so other panels can refresh', async () => {
+    const onSaved = vi.fn();
+
+    render(<RunConfigurationPanel runId={runId} onSaved={onSaved} />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Guardar configuración' }));
+
+    await waitFor(() => {
+      expect(onSaved).toHaveBeenCalledWith(configuration);
+    });
+  });
+
+  it('does not report a configuration that failed to save', async () => {
+    const onSaved = vi.fn();
+
+    vi.mocked(saveRunConfiguration).mockRejectedValue(new RunApiError('Server error', 500));
+
+    render(<RunConfigurationPanel runId={runId} onSaved={onSaved} />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Guardar configuración' }));
+
+    await screen.findByRole('alert');
+
+    expect(onSaved).not.toHaveBeenCalled();
+  });
+
   it('saves a level increase typed by the user', async () => {
     renderPanel();
 

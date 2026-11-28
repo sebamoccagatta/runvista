@@ -4,11 +4,12 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import { MemoryRouter, Route, Routes } from 'react-router';
 
 import { getRun, RunApiError } from '../runs/api/runs.api';
+import { getRunBadges } from '../runs/badges/badges.api';
 
 import type { Run } from '../runs/types';
 
@@ -24,19 +25,38 @@ vi.mock('../runs/api/runs.api', async (importOriginal) => {
 });
 
 vi.mock('../runs/configuration/RunConfigurationPanel', () => ({
-  RunConfigurationPanel: () => (
+  RunConfigurationPanel: ({ onSaved }: { onSaved?: () => void }) => (
     <section>
       <h3>Configuración</h3>
+
+      <button type="button" onClick={() => onSaved?.()}>
+        Simular configuración guardada
+      </button>
     </section>
   ),
 }));
 
 vi.mock('../runs/pokemon/RunPokemonPanel', () => ({
-  RunPokemonPanel: ({ runId }: { runId: string }) => (
+  RunPokemonPanel: ({
+    runId,
+    onPokemonChange,
+  }: {
+    runId: string;
+    onPokemonChange?: (pokemon: { status: string; level: number }[]) => void;
+  }) => (
     <section aria-label="Panel Pokémon" data-run-id={runId}>
       <h2>Pokémon de la partida</h2>
+
+      <button type="button" onClick={() => onPokemonChange?.([{ status: 'TEAM', level: 20 }])}>
+        Subir equipo a Nv. 20
+      </button>
     </section>
   ),
+}));
+
+vi.mock('../runs/badges/badges.api', () => ({
+  getRunBadges: vi.fn(),
+  setRunBadge: vi.fn(),
 }));
 
 const run: Run = {
@@ -64,6 +84,7 @@ function renderDetails(path = `/app/runs/${run.id}`) {
 beforeEach(() => {
   vi.resetAllMocks();
   vi.mocked(getRun).mockResolvedValue(run);
+  vi.mocked(getRunBadges).mockResolvedValue({ configured: false, badges: [] });
 });
 
 afterEach(() => {
@@ -113,6 +134,52 @@ describe('RunDetailsPage', () => {
     }
 
     expect(screen.getAllByText('Próximamente')).toHaveLength(1);
+  });
+
+  it('updates the level cap warning when the team changes, without reloading', async () => {
+    vi.mocked(getRunBadges).mockResolvedValue({
+      configured: true,
+      gameId: 'red',
+      levelCapIncrease: 0,
+      badges: [
+        {
+          key: 'kanto-boulder',
+          region: 'kanto',
+          name: 'Medalla Roca',
+          leader: 'Brock',
+          colors: { primary: '#9e8f7a', secondary: '#5d4b3a' },
+          levelCap: 14,
+          obtained: false,
+          obtainedAt: null,
+        },
+      ],
+    });
+
+    renderDetails();
+
+    await screen.findByRole('button', { name: /Medalla Roca/ });
+
+    expect(screen.queryByText(/por encima del tope/)).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Subir equipo a Nv. 20' }));
+
+    expect(await screen.findByText(/Tu equipo llega al Nv. 20/)).toBeDefined();
+    expect(getRunBadges).toHaveBeenCalledTimes(1);
+  });
+
+  it('reloads the badges after saving the configuration, without reloading the page', async () => {
+    renderDetails();
+
+    await screen.findByRole('heading', { name: 'Pokémon Y' });
+    await screen.findByText(/Elegí el juego de la partida en la configuración/);
+
+    expect(getRunBadges).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Simular configuración guardada' }));
+
+    await waitFor(() => {
+      expect(getRunBadges).toHaveBeenCalledTimes(2);
+    });
   });
 
   it('renders the Pokemon panel for the selected run', async () => {

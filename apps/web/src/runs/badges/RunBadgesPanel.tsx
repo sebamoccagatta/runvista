@@ -6,14 +6,17 @@ import { Card } from '@runvista/ui';
 import { RunApiError } from '../api/runs.api';
 import { secondaryButton } from '../types';
 
-import { listRunPokemon } from '../pokemon/pokemon.api';
-
 import { getRunBadges, setRunBadge, type RunBadge, type RunBadgesState } from './badges.api';
 import { BadgeIcon } from './BadgeIcon';
-import { getHighestTeamLevel, isTeamOverCap } from './team-level';
+import { isTeamOverCap } from './team-level';
 
 interface RunBadgesPanelProps {
   runId: string;
+  /**
+   * Nivel más alto del equipo activo. Lo entrega la página con los datos del panel
+   * de Pokémon, así la advertencia sigue los cambios sin recargar. Sin valor, no avisa.
+   */
+  highestTeamLevel?: number | null;
 }
 
 type LoadState = 'loading' | 'ready' | 'guest' | 'error';
@@ -47,12 +50,10 @@ function groupByRegion(badges: readonly RunBadge[]): RegionGroup[] {
   return groups;
 }
 
-export function RunBadgesPanel({ runId }: RunBadgesPanelProps) {
+export function RunBadgesPanel({ runId, highestTeamLevel = null }: RunBadgesPanelProps) {
   const [loadState, setLoadState] = useState<LoadState>('loading');
   const [state, setState] = useState<RunBadgesState | null>(null);
   const [retryCount, setRetryCount] = useState(0);
-  // Nivel más alto del equipo. Si no se puede cargar, no hay advertencia.
-  const [highestTeamLevel, setHighestTeamLevel] = useState<number | null>(null);
   const [pending, setPending] = useState<ReadonlySet<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
 
@@ -71,24 +72,6 @@ export function RunBadgesPanel({ runId }: RunBadgesPanelProps) {
         if (controller.signal.aborted) return;
 
         setLoadState(cause instanceof RunApiError && cause.status === 401 ? 'guest' : 'error');
-      });
-
-    return () => controller.abort();
-  }, [runId, retryCount]);
-
-  useEffect(() => {
-    const controller = new AbortController();
-
-    listRunPokemon(runId, controller.signal)
-      .then((team) => {
-        if (!controller.signal.aborted) {
-          setHighestTeamLevel(getHighestTeamLevel(team));
-        }
-      })
-      .catch(() => {
-        if (!controller.signal.aborted) {
-          setHighestTeamLevel(null);
-        }
       });
 
     return () => controller.abort();

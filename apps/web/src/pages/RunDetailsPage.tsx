@@ -5,7 +5,9 @@ import { Badge, Card } from '@runvista/ui';
 
 import { getRun, RunApiError } from '../runs/api/runs.api';
 import { RunBadgesPanel } from '../runs/badges/RunBadgesPanel';
+import { getHighestTeamLevel } from '../runs/badges/team-level';
 import { RunConfigurationPanel } from '../runs/configuration/RunConfigurationPanel';
+import type { RunPokemon } from '../runs/pokemon/pokemon.api';
 import { RunPokemonPanel } from '../runs/pokemon/RunPokemonPanel';
 
 import {
@@ -77,6 +79,14 @@ export function RunDetailsPage() {
   });
 
   const [retryCount, setRetryCount] = useState(0);
+
+  // Lista de Pokémon que mantiene su panel; las medallas la usan para avisar si el
+  // equipo supera el tope, y se actualiza sola con cada cambio.
+  const [team, setTeam] = useState<RunPokemon[]>([]);
+
+  // Cambia al guardar la configuración: el juego y el aumento de nivel definen los
+  // topes de las medallas, así que ese panel vuelve a cargarse sin recargar la página.
+  const [configurationVersion, setConfigurationVersion] = useState(0);
 
   useEffect(() => {
     if (!id) {
@@ -250,9 +260,17 @@ export function RunDetailsPage() {
             </div>
 
             <div className="grid items-start gap-5 sm:grid-cols-2">
-              <RunConfigurationPanel key={detail.run.id} runId={detail.run.id} />
+              <RunConfigurationPanel
+                key={detail.run.id}
+                runId={detail.run.id}
+                onSaved={() => setConfigurationVersion((version) => version + 1)}
+              />
 
-              <RunBadgesPanel key={`badges-${detail.run.id}`} runId={detail.run.id} />
+              <RunBadgesPanel
+                key={`badges-${detail.run.id}-${configurationVersion}`}
+                runId={detail.run.id}
+                highestTeamLevel={getHighestTeamLevel(team)}
+              />
 
               <Link
                 to={`/app/runs/${detail.run.id}/overlays`}
@@ -314,7 +332,7 @@ export function RunDetailsPage() {
           </section>
 
           <div className="border-t border-white/10 pt-8">
-            <RunPokemonPanel runId={detail.run.id} />
+            <RunPokemonPanel runId={detail.run.id} onPokemonChange={setTeam} />
           </div>
         </div>
       )}
