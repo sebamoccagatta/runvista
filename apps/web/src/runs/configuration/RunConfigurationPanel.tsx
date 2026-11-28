@@ -18,6 +18,8 @@ import {
 
 interface RunConfigurationPanelProps {
   runId: string;
+  /** Avisa tras guardar, para que otros paneles (como las medallas) se actualicen. */
+  onSaved?: (configuration: RunConfiguration) => void;
 }
 
 type LoadState = 'loading' | 'ready' | 'guest' | 'error';
@@ -33,7 +35,7 @@ function parseLevelCapIncrease(text: string): number | null {
   return value <= MAX_LEVEL_CAP_INCREASE ? value : null;
 }
 
-export function RunConfigurationPanel({ runId }: RunConfigurationPanelProps) {
+export function RunConfigurationPanel({ runId, onSaved }: RunConfigurationPanelProps) {
   const [loadState, setLoadState] = useState<LoadState>('loading');
   const [configuration, setConfiguration] = useState<RunConfiguration | null>(null);
 
@@ -102,6 +104,7 @@ export function RunConfigurationPanel({ runId }: RunConfigurationPanelProps) {
 
       setConfiguration(result);
       setSaved(true);
+      onSaved?.(result);
     } catch (cause) {
       if (cause instanceof RunApiError && cause.status === 401) {
         setLoadState('guest');

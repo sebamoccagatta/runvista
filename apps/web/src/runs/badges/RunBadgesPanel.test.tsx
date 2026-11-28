@@ -130,6 +130,59 @@ describe('RunBadgesPanel', () => {
     expect(titles).toEqual(['Johto', 'Kanto']);
   });
 
+  it('warns when the team is above the next level cap', async () => {
+    render(<RunBadgesPanel runId={runId} highestTeamLevel={20} />);
+
+    expect(
+      await screen.findByText(/Tu equipo llega al Nv. 20, por encima del tope de Brock/),
+    ).toBeTruthy();
+  });
+
+  it('does not warn when the team stays within the cap', async () => {
+    render(<RunBadgesPanel runId={runId} highestTeamLevel={16} />);
+
+    await screen.findByRole('button', { name: /Medalla Roca/ });
+
+    expect(screen.queryByText(/por encima del tope/)).toBeNull();
+  });
+
+  it('follows the team level as it changes, without reloading', async () => {
+    const { rerender } = render(<RunBadgesPanel runId={runId} highestTeamLevel={10} />);
+
+    await screen.findByRole('button', { name: /Medalla Roca/ });
+
+    expect(screen.queryByText(/por encima del tope/)).toBeNull();
+
+    rerender(<RunBadgesPanel runId={runId} highestTeamLevel={20} />);
+
+    expect(screen.getByText(/Tu equipo llega al Nv. 20/)).toBeTruthy();
+
+    rerender(<RunBadgesPanel runId={runId} highestTeamLevel={14} />);
+
+    expect(screen.queryByText(/por encima del tope/)).toBeNull();
+    expect(getRunBadges).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not warn when every badge is already marked', async () => {
+    vi.mocked(getRunBadges).mockResolvedValue(
+      configured([badge({ obtained: true, obtainedAt: '2026-11-28T12:00:00.000Z' })]),
+    );
+
+    render(<RunBadgesPanel runId={runId} highestTeamLevel={40} />);
+
+    await screen.findByRole('button', { name: /Medalla Roca/ });
+
+    expect(screen.queryByText(/por encima del tope/)).toBeNull();
+  });
+
+  it('does not warn without a team level', async () => {
+    render(<RunBadgesPanel runId={runId} />);
+
+    await screen.findByRole('button', { name: /Medalla Roca/ });
+
+    expect(screen.queryByText(/por encima del tope/)).toBeNull();
+  });
+
   it('asks to sign in when the session has expired', async () => {
     vi.mocked(getRunBadges).mockRejectedValue(new RunApiError('Unauthorized', 401));
 

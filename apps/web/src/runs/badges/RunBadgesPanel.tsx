@@ -8,9 +8,15 @@ import { secondaryButton } from '../types';
 
 import { getRunBadges, setRunBadge, type RunBadge, type RunBadgesState } from './badges.api';
 import { BadgeIcon } from './BadgeIcon';
+import { isTeamOverCap } from './team-level';
 
 interface RunBadgesPanelProps {
   runId: string;
+  /**
+   * Nivel más alto del equipo activo. Lo entrega la página con los datos del panel
+   * de Pokémon, así la advertencia sigue los cambios sin recargar. Sin valor, no avisa.
+   */
+  highestTeamLevel?: number | null;
 }
 
 type LoadState = 'loading' | 'ready' | 'guest' | 'error';
@@ -44,7 +50,7 @@ function groupByRegion(badges: readonly RunBadge[]): RegionGroup[] {
   return groups;
 }
 
-export function RunBadgesPanel({ runId }: RunBadgesPanelProps) {
+export function RunBadgesPanel({ runId, highestTeamLevel = null }: RunBadgesPanelProps) {
   const [loadState, setLoadState] = useState<LoadState>('loading');
   const [state, setState] = useState<RunBadgesState | null>(null);
   const [retryCount, setRetryCount] = useState(0);
@@ -198,6 +204,13 @@ export function RunBadgesPanel({ runId }: RunBadgesPanelProps) {
                 ? `Próximo tope: Nv. ${nextBadge.levelCap} (líder ${nextBadge.leader}).`
                 : 'Todas las medallas de este juego están marcadas.'}
             </p>
+
+            {nextBadge && isTeamOverCap(highestTeamLevel, nextBadge.levelCap) && (
+              <p role="status" className="text-sm font-semibold text-amber-300">
+                Tu equipo llega al Nv. {highestTeamLevel}, por encima del tope de {nextBadge.leader}{' '}
+                (Nv. {nextBadge.levelCap}).
+              </p>
+            )}
 
             {groupByRegion(badges).map((group) => (
               <div key={group.region} className="space-y-3">

@@ -19,6 +19,12 @@ import { PokemonPublicationControls } from './PokemonPublicationControls';
 
 interface RunPokemonPanelProps {
   runId: string;
+  /**
+   * Avisa cada vez que cambia la lista (carga, alta, edición o movimiento), para
+   * que otros paneles de la página usen los datos actuales sin volver a consultar.
+   * Debe ser una referencia estable.
+   */
+  onPokemonChange?: (pokemon: RunPokemon[]) => void;
 }
 
 const TEAM_SLOTS = [1, 2, 3, 4, 5, 6] as const;
@@ -213,13 +219,17 @@ function EmptyTeamSlot({ slot }: EmptyTeamSlotProps) {
   );
 }
 
-function RunPokemonPanelContent({ runId }: RunPokemonPanelProps) {
+function RunPokemonPanelContent({ runId, onPokemonChange }: RunPokemonPanelProps) {
   const [pokemon, setPokemon] = useState<RunPokemon[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [movingId, setMovingId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    onPokemonChange?.(pokemon);
+  }, [pokemon, onPokemonChange]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -455,6 +465,6 @@ function RunPokemonPanelContent({ runId }: RunPokemonPanelProps) {
   );
 }
 
-export function RunPokemonPanel({ runId }: RunPokemonPanelProps) {
-  return <RunPokemonPanelContent key={runId} runId={runId} />;
+export function RunPokemonPanel({ runId, onPokemonChange }: RunPokemonPanelProps) {
+  return <RunPokemonPanelContent key={runId} runId={runId} onPokemonChange={onPokemonChange} />;
 }
